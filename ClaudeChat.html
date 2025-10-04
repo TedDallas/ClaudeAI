@@ -38,6 +38,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-markdown.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-scss.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-pascal.min.js"></script>
     
     <style>
         * {
@@ -170,6 +171,14 @@
             transform: translateX(20px);
         }
 
+        /* Thinking toggles container - now below model selector */
+        .thinking-toggles-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
         .thinking-indicator {
             display: none;
             padding: 8px 12px;
@@ -291,6 +300,24 @@
 
         .clear-button:hover {
             background: #c82333;
+        }
+
+        .save-button {
+            background: #007bff;
+            color: white;
+        }
+
+        .save-button:hover {
+            background: #0056b3;
+        }
+
+        .load-button {
+            background: #6c757d;
+            color: white;
+        }
+
+        .load-button:hover {
+            background: #545b62;
         }
 
         .status-indicator {
@@ -640,6 +667,21 @@
             margin-left: 10px;
             font-style: italic;
         }
+
+        .session-tokens-info {
+            font-size: 12px;
+            color: #667eea;
+            margin-left: 10px;
+            font-weight: 600;
+            padding: 4px 8px;
+            background: #e8eaf6;
+            border-radius: 4px;
+        }
+
+        /* Hidden file input */
+        #fileInput {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -648,6 +690,8 @@
         <div class="right-buttons">
             <button class="test-connection-button" onclick="testConnection()">Test Connection</button>
             <button class="clear-button" onclick="clearChat()">Clear Chat</button>
+            <button class="save-button" onclick="saveChat()">Save Chat</button>
+            <button class="load-button" onclick="loadChat()">Load Chat</button>
         </div>
 
         <div class="header">
@@ -663,8 +707,11 @@
                     <option value="claude-opus-4-1-20250805">Claude 4.1 Opus (expensive $$$)</option>
                 </select>
                 <span class="max-tokens-info" id="maxTokensInfo">Max tokens: 64000</span>
-                
-                <!-- Thinking mode toggle -->
+                <span class="session-tokens-info" id="sessionTokensInfo">Session: 0 tokens</span>
+            </div>
+            
+            <!-- Thinking toggles moved here -->
+            <div class="thinking-toggles-container">
                 <div class="thinking-toggle">
                     <label>
                         <span>Thinking Mode</span>
@@ -674,7 +721,6 @@
                     </label>
                 </div>
 
-                <!-- Show Thinking toggle -->
                 <div class="thinking-toggle" id="showThinkingContainer">
                     <label>
                         <span>Show Thinking</span>
@@ -684,6 +730,7 @@
                     </label>
                 </div>
             </div>
+            
             <div class="thinking-indicator" id="thinkingIndicator">
                 <div class="thinking-dot"></div>
                 <span>Thinking mode enabled (4000 thinking tokens). Use wisely, this costs more $$$</span>
@@ -708,6 +755,9 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
         </div>
     </div>
 
+    <!-- Hidden file input for loading chats -->
+    <input type="file" id="fileInput" accept=".json" onchange="handleFileSelect(event)">
+
     <script>
         // API Configuration
         let API_KEY = ''; // Your API key will be stored here
@@ -716,6 +766,13 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
         
         // Conversation history
         let conversationHistory = [];
+        
+        // Token tracking
+        let sessionTokens = {
+            input: 0,
+            output: 0,
+            total: 0
+        };
         
         // Thinking mode state
         let thinkingMode = false;
@@ -741,7 +798,12 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                     'sh': 'bash',
                     'yml': 'yaml',
                     'html': 'markup',
-                    'xml': 'markup'
+                    'xml': 'markup',
+                    'pas': 'pascal',
+                    'dpr': 'pascal',
+                    'freepascal': 'pascal',
+                    'objectpascal': 'pascal',
+                    'lazarus': 'pascal'
                 };
                 
                 const mappedLang = languageMap[lang] || lang;
@@ -761,6 +823,128 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             headerIds: false,
             mangle: false
         });
+
+        // Save chat to file
+        function saveChat() {
+            if (conversationHistory.length === 0) {
+                alert('No chat history to save!');
+                return;
+            }
+
+            const chatData = {
+                version: '1.0',
+                timestamp: new Date().toISOString(),
+                model: document.getElementById('modelSelect').value,
+                thinkingMode: thinkingMode,
+                sessionTokens: sessionTokens,
+                conversationHistory: conversationHistory,
+                // Also save the rendered chat for reference
+                chatHtml: document.getElementById('chatContainer').innerHTML
+            };
+
+            const dataStr = JSON.stringify(chatData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            
+            // Create download link
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            
+            // Generate filename with timestamp
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            link.download = `claude-chat-${timestamp}.json`;
+            
+            // Trigger download
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            updateDebugInfo('Chat saved successfully');
+        }
+
+        // Load chat from file
+        function loadChat() {
+            document.getElementById('fileInput').click();
+        }
+
+        // Handle file selection
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const chatData = JSON.parse(e.target.result);
+                    
+                    // Validate the data
+                    if (!chatData.conversationHistory || !Array.isArray(chatData.conversationHistory)) {
+                        throw new Error('Invalid chat file format');
+                    }
+
+                    // Load the conversation history
+                    conversationHistory = chatData.conversationHistory;
+                    
+                    // Restore session tokens if available
+                    if (chatData.sessionTokens) {
+                        sessionTokens = chatData.sessionTokens;
+                        updateSessionTokensDisplay();
+                    }
+                    
+                    // Restore model selection if available
+                    if (chatData.model) {
+                        document.getElementById('modelSelect').value = chatData.model;
+                        updateMaxTokensInfo();
+                    }
+                    
+                    // Restore thinking mode if available
+                    if (chatData.thinkingMode !== undefined) {
+                        thinkingMode = chatData.thinkingMode;
+                        updateThinkingToggle();
+                        updateShowThinkingToggleState();
+                    }
+
+                    // Rebuild the chat UI
+                    rebuildChatFromHistory();
+                    
+                    updateDebugInfo('Chat loaded successfully');
+                    
+                    // Reset file input
+                    event.target.value = '';
+                    
+                } catch (error) {
+                    alert('Error loading chat file: ' + error.message);
+                    console.error('Error loading chat:', error);
+                    event.target.value = ''; // Reset file input
+                }
+            };
+            
+            reader.onerror = function() {
+                alert('Error reading file');
+                event.target.value = ''; // Reset file input
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // Rebuild chat UI from conversation history
+        function rebuildChatFromHistory() {
+            const chatContainer = document.getElementById('chatContainer');
+            chatContainer.innerHTML = ''; // Clear current chat
+            
+            // Rebuild each message
+            conversationHistory.forEach(msg => {
+                const processedMessage = processThinkingContent(msg.content);
+                addMessageToChat(msg.role, processedMessage.displayContent, processedMessage.thinkingContent, false);
+            });
+            
+            // Scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+            
+            // Check width adjustment
+            setTimeout(checkAndAdjustContainerWidth, 100);
+        }
 
         // Auto-resize textarea
         function autoResizeTextarea() {
@@ -852,6 +1036,22 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             debouncedCheckWidth();
         });
 
+        // Update session tokens display
+        function updateSessionTokensDisplay() {
+            const sessionTokensInfo = document.getElementById('sessionTokensInfo');
+            sessionTokensInfo.textContent = `Session: ${sessionTokens.total.toLocaleString()} tokens (in: ${sessionTokens.input.toLocaleString()}, out: ${sessionTokens.output.toLocaleString()})`;
+        }
+
+        // Reset session tokens
+        function resetSessionTokens() {
+            sessionTokens = {
+                input: 0,
+                output: 0,
+                total: 0
+            };
+            updateSessionTokensDisplay();
+        }
+
         // Load API key and settings from localStorage on page load
         window.onload = function() {
             const savedKey = localStorage.getItem('anthropic_api_key');
@@ -879,6 +1079,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             updateShowThinkingToggleState();
             
             updateMaxTokensInfo();
+            updateSessionTokensDisplay();
             
             // Start observing the chat container
             const chatContainer = document.getElementById('chatContainer');
@@ -1055,6 +1256,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
 
         function clearChat() {
             conversationHistory = [];
+            resetSessionTokens();
             const chatContainer = document.getElementById('chatContainer');
             chatContainer.innerHTML = `
                 <div class="message assistant">
@@ -1083,9 +1285,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             // Prepare the message content based on thinking mode
             let messageContent = message;
             if (thinkingMode) {
-                messageContent = `<thinking>
-The user wants me to think through this request step by step before responding.
-</thinking>
+                messageContent = `
 
 ${message}`;
             }
@@ -1150,6 +1350,14 @@ ${message}`;
                 const data = await response.json();
                 const assistantMessage = data.content[0].text;
                 
+                // Update token counts from API response
+                if (data.usage) {
+                    sessionTokens.input += data.usage.input_tokens || 0;
+                    sessionTokens.output += data.usage.output_tokens || 0;
+                    sessionTokens.total = sessionTokens.input + sessionTokens.output;
+                    updateSessionTokensDisplay();
+                }
+                
                 // Process the response to handle thinking tags if present
                 const processedMessage = processThinkingContent(assistantMessage);
                 
@@ -1200,7 +1408,7 @@ ${message}`;
             };
         }
 
-        function addMessageToChat(role, content, thinkingContent = null) {
+        function addMessageToChat(role, content, thinkingContent = null, addToHistory = true) {
             const chatContainer = document.getElementById('chatContainer');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
@@ -1259,60 +1467,121 @@ ${message}`;
             setTimeout(checkAndAdjustContainerWidth, 50);
         }
 
-        function renderMarkdownWithCodeBlocks(content) {
-            // First, temporarily replace code blocks to protect them during markdown parsing
-            const codeBlocks = [];
-            const codeBlockRegex = /```(\w+)?\n?([\s\S]*?)```/g;
-            
-            const contentWithPlaceholders = content.replace(codeBlockRegex, (match, lang, code) => {
-                const index = codeBlocks.length;
-                codeBlocks.push({ lang: lang || 'plaintext', code: code.trim() });
-                return `%%%CODEBLOCK${index}%%%`;
-            });
-            
-            // Parse the markdown
-            let html = marked.parse(contentWithPlaceholders);
-            
-            // Replace placeholders with properly formatted code blocks
-            html = html.replace(/%%%CODEBLOCK(\d+)%%%/g, (match, index) => {
-                const block = codeBlocks[parseInt(index)];
-                return createCodeBlock(block.code, block.lang);
-            });
-            
-            return html;
-        }
+		function renderMarkdownWithCodeBlocks(content) {
+			// Use a more robust approach to extract code blocks
+			const codeBlocks = [];
+			let processedContent = '';
+			let lastIndex = 0;
+			let inCodeBlock = false;
+			let codeBlockStart = -1;
+			let currentLang = '';
+			
+			// Split by lines to process more carefully
+			const lines = content.split('\n');
+			let i = 0;
+			
+			while (i < lines.length) {
+				const line = lines[i];
+				
+				// Check for code block delimiter
+				if (line.trim().startsWith('```')) {
+					if (!inCodeBlock) {
+						// Starting a code block
+						inCodeBlock = true;
+						codeBlockStart = i;
+						// Extract language (everything after ``` on the same line)
+						currentLang = line.trim().substring(3).trim();
+						i++;
+					} else {
+						// Ending a code block
+						inCodeBlock = false;
+						
+						// Extract the code content
+						const codeLines = lines.slice(codeBlockStart + 1, i);
+						const code = codeLines.join('\n');
+						
+						const index = codeBlocks.length;
+						codeBlocks.push({ 
+							lang: currentLang || 'plaintext', 
+							code: code 
+						});
+						
+						processedContent += `%%%CODEBLOCK${index}%%%\n`;
+						currentLang = '';
+						i++;
+					}
+				} else {
+					// Regular line
+					if (!inCodeBlock) {
+						processedContent += line + '\n';
+					}
+					i++;
+				}
+			}
+			
+			// If we're still in a code block at the end (malformed), treat remaining as code
+			if (inCodeBlock) {
+				const codeLines = lines.slice(codeBlockStart + 1);
+				const code = codeLines.join('\n');
+				const index = codeBlocks.length;
+				codeBlocks.push({ 
+					lang: currentLang || 'plaintext', 
+					code: code 
+				});
+				processedContent += `%%%CODEBLOCK${index}%%%\n`;
+			}
+			
+			// Parse the markdown
+			let html = marked.parse(processedContent);
+			
+			// Replace placeholders with properly formatted code blocks
+			html = html.replace(/%%%CODEBLOCK(\d+)%%%/g, (match, index) => {
+				const block = codeBlocks[parseInt(index)];
+				return createCodeBlock(block.code, block.lang);
+			});
+			
+			return html;
+		}
 
-        function createCodeBlock(code, language) {
-            // Map common language aliases
-            const languageMap = {
-                'py': 'python',
-                'js': 'javascript',
-                'ts': 'typescript',
-                'sh': 'bash',
-                'yml': 'yaml',
-                'html': 'markup',
-                'xml': 'markup'
-            };
-            
-            const mappedLang = languageMap[language] || language;
-            let highlightedCode;
-            
-            try {
-                if (Prism.languages[mappedLang]) {
-                    highlightedCode = Prism.highlight(code, Prism.languages[mappedLang], mappedLang);
-                } else {
-                    // If language not supported, use plain text
-                    highlightedCode = escapeHtml(code);
-                }
-            } catch (e) {
-                console.warn(`Error highlighting ${mappedLang}:`, e);
-                highlightedCode = escapeHtml(code);
-            }
-            
-            return `<div class="code-block-wrapper">
-                        <pre><code class="language-${mappedLang}">${highlightedCode}</code></pre>
-                    </div>`;
-        }
+		function createCodeBlock(code, language) {
+			// Map common language aliases
+			const languageMap = {
+				'py': 'python',
+				'js': 'javascript',
+				'ts': 'typescript',
+				'sh': 'bash',
+				'yml': 'yaml',
+				'html': 'markup',
+				'xml': 'markup',
+				'pas': 'pascal',
+				'dpr': 'pascal',
+				'freepascal': 'pascal',
+				'objectpascal': 'pascal',
+				'lazarus': 'pascal'
+			};
+			
+			const mappedLang = languageMap[language] || language;
+			let highlightedCode;
+			
+			// Don't trim the code - preserve exact formatting
+			const codeToHighlight = code;
+			
+			try {
+				if (Prism.languages[mappedLang]) {
+					highlightedCode = Prism.highlight(codeToHighlight, Prism.languages[mappedLang], mappedLang);
+				} else {
+					// If language not supported, use plain text
+					highlightedCode = escapeHtml(codeToHighlight);
+				}
+			} catch (e) {
+				console.warn(`Error highlighting ${mappedLang}:`, e);
+				highlightedCode = escapeHtml(codeToHighlight);
+			}
+			
+			return `<div class="code-block-wrapper">
+						<pre><code class="language-${escapeHtml(mappedLang)}">${highlightedCode}</code></pre>
+					</div>`;
+		}
 
         function addCopyButtonsToCodeBlocks(container) {
             const codeBlocks = container.querySelectorAll('.code-block-wrapper');
@@ -1444,6 +1713,37 @@ Here are your options:
 3. USE A PUBLIC CORS PROXY (Not recommended for production):
    Update API_URL to: https://cors-anywhere.herokuapp.com/https://api.anthropic.com/v1/messages
         `);
+
+		function customConfirm(message, heading = "Confirm") {
+		  return new Promise((resolve) => {
+			// Create modal elements
+			const modal = document.createElement('div');
+			modal.innerHTML = `
+			  <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+						  background: rgba(0,0,0,0.5); display: flex; align-items: center; 
+						  justify-content: center; z-index: 9999;">
+				<div style="background: white; padding: 20px; border-radius: 8px; 
+							min-width: 300px;">
+				  <h3>${heading}</h3>
+				  <p>${message}</p>
+				  <button id="confirmYes">OK</button>
+				  <button id="confirmNo">Cancel</button>
+				</div>
+			  </div>
+			`;
+			document.body.appendChild(modal);
+			
+			modal.querySelector('#confirmYes').onclick = () => {
+			  document.body.removeChild(modal);
+			  resolve(true);
+			};
+			modal.querySelector('#confirmNo').onclick = () => {
+			  document.body.removeChild(modal);
+			  resolve(false);
+			};
+		  });
+		}
+
     </script>
 </body>
 </html>
