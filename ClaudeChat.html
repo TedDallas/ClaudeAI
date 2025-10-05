@@ -242,6 +242,10 @@
             align-items: center;
         }
 
+        .api-key-section.hidden {
+            display: none;
+        }
+
         .api-key-section input {
             width: 400px;
             padding: 8px 12px;
@@ -264,6 +268,15 @@
             background: #5568d3;
         }
 
+        .api-key-section .test-connection-button {
+            background: #28a745;
+            color: white;
+        }
+
+        .api-key-section .test-connection-button:hover {
+            background: #218838;
+        }
+
         /* Right-side buttons positioning */
         .right-buttons {
             position: absolute;
@@ -282,15 +295,6 @@
             cursor: pointer;
             font-size: 14px;
             white-space: nowrap;
-        }
-
-        .test-connection-button {
-            background: #28a745;
-            color: white;
-        }
-
-        .test-connection-button:hover {
-            background: #218838;
         }
 
         .clear-button {
@@ -688,7 +692,6 @@
     <div class="container" id="mainContainer">
         <!-- Right-side buttons -->
         <div class="right-buttons">
-            <button class="test-connection-button" onclick="testConnection()">Test Connection</button>
             <button class="clear-button" onclick="clearChat()">Clear Chat</button>
             <button class="save-button" onclick="saveChat()">Save Chat</button>
             <button class="load-button" onclick="loadChat()">Load Chat</button>
@@ -696,15 +699,16 @@
 
         <div class="header">
             <h1>Chat with Claude AI <span class="status-indicator disconnected" id="statusIndicator"></span></h1>
-            <div class="api-key-section">
+            <div class="api-key-section" id="apiKeySection">
                 <input type="password" id="apiKeyInput" placeholder="Enter your Anthropic API key (sk-ant-api...)">
                 <button onclick="saveApiKey()">Save API Key</button>
+                <button class="test-connection-button" onclick="testConnection()">Test Connection</button>
             </div>
             <div class="model-selector">
                 <label for="modelSelect">Model:</label>
                 <select id="modelSelect" onchange="updateMaxTokensInfo()">
-                    <option value="claude-sonnet-4-5-20250929">Claude 4.5 Sonnet (cheap $)</option>
-                    <option value="claude-opus-4-1-20250805">Claude 4.1 Opus (expensive $$$)</option>
+                    <option value="claude-sonnet-4-5-20250929">Claude 4.5 Sonnet</option>
+                    <option value="claude-opus-4-1-20250805">Claude 4.1 Opus</option>
                 </select>
                 <span class="max-tokens-info" id="maxTokensInfo">Max tokens: 64000</span>
                 <span class="session-tokens-info" id="sessionTokensInfo">Session: 0 tokens</span>
@@ -729,11 +733,20 @@
                         </div>
                     </label>
                 </div>
-            </div>
-            
-            <div class="thinking-indicator" id="thinkingIndicator">
-                <div class="thinking-dot"></div>
-                <span>Thinking mode enabled (4000 thinking tokens). Use wisely, this costs more $$$</span>
+
+                <div class="thinking-indicator" id="thinkingIndicator">
+                    <div class="thinking-dot"></div>
+                    <span>Thinking mode enabled (4000 thinking tokens).</span>
+                </div>
+
+                <div class="thinking-toggle">
+                    <label>
+                        <span>Setup</span>
+                        <div class="toggle-switch" id="setupToggle" onclick="toggleSetup()">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </label>
+                </div>
             </div>
             <div class="debug-info" id="debugInfo"></div>
         </div>
@@ -777,6 +790,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
         // Thinking mode state
         let thinkingMode = false;
         let showThinking = false; // Default to off
+        let setupVisible = false; // Setup toggle state
 
         // Thinking tokens configuration
         const THINKING_TOKENS = 4000;
@@ -823,6 +837,38 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             headerIds: false,
             mangle: false
         });
+
+        // Toggle Setup visibility
+        function toggleSetup() {
+            setupVisible = !setupVisible;
+            const setupToggle = document.getElementById('setupToggle');
+            const apiKeySection = document.getElementById('apiKeySection');
+            
+            if (setupVisible) {
+                setupToggle.classList.add('active');
+                apiKeySection.classList.remove('hidden');
+            } else {
+                setupToggle.classList.remove('active');
+                apiKeySection.classList.add('hidden');
+            }
+            
+            // Save preference
+            localStorage.setItem('setup_visible', setupVisible.toString());
+        }
+
+        // Update Setup toggle on load
+        function updateSetupToggle() {
+            const setupToggle = document.getElementById('setupToggle');
+            const apiKeySection = document.getElementById('apiKeySection');
+            
+            if (setupVisible) {
+                setupToggle.classList.add('active');
+                apiKeySection.classList.remove('hidden');
+            } else {
+                setupToggle.classList.remove('active');
+                apiKeySection.classList.add('hidden');
+            }
+        }
 
         // Save chat to file
         function saveChat() {
@@ -1059,7 +1105,20 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                 API_KEY = savedKey;
                 document.getElementById('apiKeyInput').value = savedKey;
                 updateStatus(true);
+                // Default Setup to off if API key exists
+                setupVisible = false;
+            } else {
+                // Default Setup to on if no API key
+                setupVisible = true;
             }
+            
+            // Load setup visibility preference (overrides default)
+            const savedSetupVisible = localStorage.getItem('setup_visible');
+            if (savedSetupVisible !== null) {
+                setupVisible = savedSetupVisible === 'true';
+            }
+            
+            updateSetupToggle();
             
             // Load thinking mode preference
             const savedThinkingMode = localStorage.getItem('thinking_mode');
