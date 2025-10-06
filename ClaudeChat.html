@@ -409,10 +409,10 @@
             color: #333;
         }
 
-		/* Delete button styles - FIXED positioning and centering */
+		/* Delete button styles */
 		.delete-button {
 			position: absolute;
-			bottom: 8px;
+			top: 8px;
 			right: 8px;
 			width: 24px;
 			height: 24px;
@@ -423,19 +423,23 @@
 			color: white;
 			border: none;
 			cursor: pointer;
-			font-size: 18px;
+			font-size: 12px;
 			font-weight: bold;
-			display: inline-block;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
 			text-align: center;
-			line-height: 28px; /* Slightly less than height to center the × */
+			line-height: 1;
 			opacity: 0;
 			transition: opacity 0.2s, background 0.2s;
-			z-index: 10;
+			z-index: 100; /* Increased z-index to ensure it's always on top */
 			padding: 0;
 			overflow: hidden;
+			pointer-events: auto; /* Ensure button is always clickable */
 		}
 
-		.message.assistant .message-content:hover .delete-button {
+		/* Show delete button on hover of the entire message, not just message-content */
+		.message.assistant:hover .delete-button {
 			opacity: 0.7;
 		}
 
@@ -465,10 +469,12 @@
             overflow-x: auto;
         }
 
-        /* Add padding to last element when delete button is present */
-        .message.assistant .message-content:has(.delete-button) > *:last-child {
-            padding-bottom: 32px;
+        /* Add padding to top-right when delete button is present */
+        /*
+		.message.assistant .message-content:has(.delete-button) {
+            padding-top: 40px;
         }
+		*/
 
         /* Markdown styling for assistant messages */
         .message.assistant .message-content h1,
@@ -816,7 +822,8 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
     <script>
         // API Configuration
         let API_KEY = ''; // Your API key will be stored here
-        const API_URL = 'https://api.anthropic.com/v1/messages';
+        const STORAGE_KEY_PREFIX = 'claude_chat_app_';
+		const API_URL = 'https://api.anthropic.com/v1/messages';
         const CORS_PROXY = ''; // You might need a CORS proxy for browser usage
         
         // Conversation history
@@ -1247,7 +1254,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
 
         // Load API key and settings from localStorage on page load
         window.onload = function() {
-            const savedKey = localStorage.getItem('anthropic_api_key');
+            const savedKey = localStorage.getItem(STORAGE_KEY_PREFIX + 'anthropic_api_key');
             if (savedKey) {
                 API_KEY = savedKey;
                 document.getElementById('apiKeyInput').value = savedKey;
@@ -1395,11 +1402,11 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
         }
 
         function saveApiKey() {
-            const apiKeyInput = document.getElementById('apiKeyInput');
-            API_KEY = apiKeyInput.value.trim();
-            
-            if (API_KEY) {
-                localStorage.setItem('anthropic_api_key', API_KEY);
+			const apiKeyInput = document.getElementById('apiKeyInput');
+			API_KEY = apiKeyInput.value.trim();
+			
+			if (API_KEY) {
+				localStorage.setItem(STORAGE_KEY_PREFIX + 'anthropic_api_key', API_KEY);
                 alert('API key saved successfully!');
                 updateStatus(true);
                 testConnection();
@@ -1591,7 +1598,8 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                 }
             } finally {
                 sendButton.disabled = false;
-                messageInput.focus();
+                resetSessionTokens();
+				messageInput.focus();
             }
         }
 
