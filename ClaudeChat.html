@@ -361,6 +361,7 @@
             gap: 10px;
             max-width: 80%;
             animation: fadeIn 0.3s ease-in;
+            position: relative;
         }
 
         @keyframes fadeIn {
@@ -394,6 +395,7 @@
             /* Allow content to determine width */
             width: fit-content;
             max-width: 100%;
+            position: relative; /* Make this the positioning context for the delete button */
         }
 
         .message.user .message-content {
@@ -406,6 +408,41 @@
             background: #f1f3f5;
             color: #333;
         }
+
+		/* Delete button styles - FIXED positioning and centering */
+		.delete-button {
+			position: absolute;
+			bottom: 8px;
+			right: 8px;
+			width: 24px;
+			height: 24px;
+			min-width: 24px;
+			min-height: 24px;
+			border-radius: 50%;
+			background: #dc3545;
+			color: white;
+			border: none;
+			cursor: pointer;
+			font-size: 18px;
+			font-weight: bold;
+			display: inline-block;
+			text-align: center;
+			line-height: 28px; /* Slightly less than height to center the × */
+			opacity: 0;
+			transition: opacity 0.2s, background 0.2s;
+			z-index: 10;
+			padding: 0;
+			overflow: hidden;
+		}
+
+		.message.assistant .message-content:hover .delete-button {
+			opacity: 0.7;
+		}
+
+		.delete-button:hover {
+			opacity: 1 !important;
+			background: #c82333;
+		}
 
         /* Ensure code blocks and pre elements can expand properly */
         .message.assistant .message-content pre {
@@ -426,6 +463,11 @@
             white-space: pre;
             word-wrap: normal;
             overflow-x: auto;
+        }
+
+        /* Add padding to last element when delete button is present */
+        .message.assistant .message-content:has(.delete-button) > *:last-child {
+            padding-bottom: 32px;
         }
 
         /* Markdown styling for assistant messages */
@@ -870,6 +912,108 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             }
         }
 
+        // Delete last exchange (last assistant message and preceding user message)
+        function deleteLastExchange() {
+            const chatContainer = document.getElementById('chatContainer');
+            const messages = chatContainer.querySelectorAll('.message');
+            
+            // Need at least 2 messages (user + assistant) beyond the initial greeting
+            if (messages.length < 2) {
+                return;
+            }
+            
+            // Find the last assistant message
+            let lastAssistantIndex = -1;
+            for (let i = messages.length - 1; i >= 0; i--) {
+                if (messages[i].classList.contains('assistant')) {
+                    lastAssistantIndex = i;
+                    break;
+                }
+            }
+            
+            // If no assistant message found or it's the initial greeting, do nothing
+            if (lastAssistantIndex <= 0) {
+                return;
+            }
+            
+            // Find the user message that precedes this assistant message
+            let precedingUserIndex = -1;
+            for (let i = lastAssistantIndex - 1; i >= 0; i--) {
+                if (messages[i].classList.contains('user')) {
+                    precedingUserIndex = i;
+                    break;
+                }
+            }
+            
+            // If no preceding user message found, do nothing
+            if (precedingUserIndex < 0) {
+                return;
+            }
+            
+            // Get the user message content (strip thinking tags if present)
+            const userMessageContent = messages[precedingUserIndex].querySelector('.message-content').textContent.trim();
+            let cleanUserMessage = userMessageContent;
+            
+            // Remove thinking mode prefix if it exists
+            if (cleanUserMessage.startsWith('\n\n')) {
+                cleanUserMessage = cleanUserMessage.substring(2);
+            }
+            
+            // Remove the messages from the DOM
+            messages[lastAssistantIndex].remove();
+            messages[precedingUserIndex].remove();
+            
+            // Update conversation history - remove last 2 entries (user + assistant)
+            if (conversationHistory.length >= 2) {
+                conversationHistory.pop(); // Remove assistant message
+                conversationHistory.pop(); // Remove user message
+            }
+            
+            // Put the user message back into the input box
+            const messageInput = document.getElementById('messageInput');
+            messageInput.value = cleanUserMessage;
+            messageInput.focus();
+            
+            // Trigger auto-resize
+            autoResizeTextarea();
+            
+            // Check width adjustment after deletion
+            setTimeout(checkAndAdjustContainerWidth, 100);
+            
+            // Update delete buttons
+            updateDeleteButtons();
+            
+            updateDebugInfo('Last exchange deleted and message restored to input');
+        }
+
+        // Update delete buttons - only show on last assistant message
+        function updateDeleteButtons() {
+            const chatContainer = document.getElementById('chatContainer');
+            
+            // Remove all existing delete buttons first
+            const existingButtons = chatContainer.querySelectorAll('.delete-button');
+            existingButtons.forEach(btn => btn.remove());
+            
+            // Get all assistant messages
+            const assistantMessages = chatContainer.querySelectorAll('.message.assistant');
+            
+            // Only add delete button to the last assistant message if there are at least 2 messages
+            if (assistantMessages.length > 1) {
+                const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
+                const messageContent = lastAssistantMessage.querySelector('.message-content');
+                
+                // Double-check that messageContent exists
+                if (messageContent) {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.className = 'delete-button';
+                    deleteButton.innerHTML = '×';
+                    deleteButton.title = 'Delete this response and restore your message';
+                    deleteButton.onclick = deleteLastExchange;
+                    messageContent.appendChild(deleteButton);
+                }
+            }
+        }
+
         // Save chat to file
         function saveChat() {
             if (conversationHistory.length === 0) {
@@ -975,15 +1119,18 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
         }
 
         // Rebuild chat UI from conversation history
-        function rebuildChatFromHistory() {
+        async function rebuildChatFromHistory() {
             const chatContainer = document.getElementById('chatContainer');
             chatContainer.innerHTML = ''; // Clear current chat
             
-            // Rebuild each message
-            conversationHistory.forEach(msg => {
+            // Rebuild each message synchronously
+            for (const msg of conversationHistory) {
                 const processedMessage = processThinkingContent(msg.content);
-                addMessageToChat(msg.role, processedMessage.displayContent, processedMessage.thinkingContent, false);
-            });
+                await addMessageToChat(msg.role, processedMessage.displayContent, processedMessage.thinkingContent, false);
+            }
+            
+            // Now that all messages are added, update delete buttons
+            updateDeleteButtons();
             
             // Scroll to bottom
             chatContainer.scrollTop = chatContainer.scrollHeight;
@@ -1339,14 +1486,12 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             if (!message) return;
 
             // Add user message to chat
-            addMessageToChat('user', message);
+            await addMessageToChat('user', message);
             
             // Prepare the message content based on thinking mode
             let messageContent = message;
             if (thinkingMode) {
-                messageContent = `
-
-${message}`;
+                messageContent = `\n\n${message}`;
             }
             
             // Add to conversation history
@@ -1421,13 +1566,16 @@ ${message}`;
                 const processedMessage = processThinkingContent(assistantMessage);
                 
                 // Add assistant response to chat with markdown rendering
-                addMessageToChat('assistant', processedMessage.displayContent, processedMessage.thinkingContent);
+                await addMessageToChat('assistant', processedMessage.displayContent, processedMessage.thinkingContent);
                 
                 // Add to conversation history (keep the full response for context)
                 conversationHistory.push({
                     role: 'assistant',
                     content: assistantMessage
                 });
+
+                // Update delete buttons after adding new message
+                updateDeleteButtons();
 
                 updateDebugInfo('Message sent successfully');
 
@@ -1467,7 +1615,7 @@ ${message}`;
             };
         }
 
-        function addMessageToChat(role, content, thinkingContent = null, addToHistory = true) {
+        async function addMessageToChat(role, content, thinkingContent = null, addToHistory = true) {
             const chatContainer = document.getElementById('chatContainer');
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${role}`;
@@ -1500,12 +1648,14 @@ ${message}`;
                     mainContentDiv.innerHTML = renderedContent;
                     contentDiv.appendChild(mainContentDiv);
                     
-                    // Add copy buttons to code blocks
-                    setTimeout(() => {
-                        addCopyButtonsToCodeBlocks(contentDiv);
-                        // Check width after content is rendered
-                        checkAndAdjustContainerWidth();
-                    }, 100);
+                    // Wait for code blocks to be processed
+                    await new Promise(resolve => {
+                        setTimeout(() => {
+                            addCopyButtonsToCodeBlocks(contentDiv);
+                            checkAndAdjustContainerWidth();
+                            resolve();
+                        }, 100);
+                    });
                 } catch (e) {
                     console.error('Error rendering markdown:', e);
                     // Fallback to plain text
