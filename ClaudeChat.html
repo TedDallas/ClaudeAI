@@ -240,6 +240,7 @@
             display: flex;
             gap: 10px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .api-key-section.hidden {
@@ -247,11 +248,14 @@
         }
 
         .api-key-section input {
-            width: 400px;
             padding: 8px 12px;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 14px;
+        }
+
+        .api-key-section input[type="password"] {
+            width: 400px;
         }
 
         .api-key-section button {
@@ -275,6 +279,34 @@
 
         .api-key-section .test-connection-button:hover {
             background: #218838;
+        }
+
+        /* Temperature field styles */
+        .temperature-field {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .temperature-field label {
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .temperature-field input {
+            width: 70px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .temperature-field input:disabled {
+            background-color: #f5f5f5;
+            color: #999;
+            cursor: not-allowed;
         }
 
         /* Right-side buttons positioning */
@@ -468,13 +500,6 @@
             word-wrap: normal;
             overflow-x: auto;
         }
-
-        /* Add padding to top-right when delete button is present */
-        /*
-		.message.assistant .message-content:has(.delete-button) {
-            padding-top: 40px;
-        }
-		*/
 
         /* Markdown styling for assistant messages */
         .message.assistant .message-content h1,
@@ -751,12 +776,16 @@
                 <input type="password" id="apiKeyInput" placeholder="Enter your Anthropic API key (sk-ant-api...)">
                 <button onclick="saveApiKey()">Save API Key</button>
                 <button class="test-connection-button" onclick="testConnection()">Test Connection</button>
+                <div class="temperature-field">
+                    <label for="temperatureInput">Temperature:</label>
+                    <input type="number" id="temperatureInput" min="0" max="2" step="0.1" value="0.7">
+                </div>
             </div>
             <div class="model-selector">
                 <label for="modelSelect">Model:</label>
                 <select id="modelSelect" onchange="updateMaxTokensInfo()">
-                    <option value="claude-sonnet-4-5-20250929">Claude 4.5 Sonnet</option>
-                    <option value="claude-opus-4-1-20250805">Claude 4.1 Opus</option>
+                    <option value="claude-sonnet-4-20250514">Claude 4.0 Sonnet</option>
+                    <option value="claude-opus-4-20250514">Claude 4.0 Opus</option>
                 </select>
                 <span class="max-tokens-info" id="maxTokensInfo">Max tokens: 64000</span>
                 <span class="session-tokens-info" id="sessionTokensInfo">Session: 0 tokens</span>
@@ -841,13 +870,17 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
         let showThinking = false; // Default to off
         let setupVisible = false; // Setup toggle state
 
+        // Temperature state
+        let currentTemperature = 0.7;
+        let savedTemperature = 0.7; // Store temperature when thinking mode is off
+
         // Thinking tokens configuration
         const THINKING_TOKENS = 4000;
 
         // Model max tokens configuration
         const MODEL_MAX_TOKENS = {
-            'claude-sonnet-4-5-20250929': 64000,
-            'claude-opus-4-1-20250805': 32000
+            'claude-sonnet-4-20250514': 64000,
+            'claude-opus-4-20250514': 32000
         };
 
         // Configure marked options
@@ -919,6 +952,48 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             }
         }
 
+        // Update temperature field based on thinking mode
+        function updateTemperatureField() {
+            const temperatureInput = document.getElementById('temperatureInput');
+            
+            if (thinkingMode) {
+                // Save current temperature before switching to thinking mode
+                savedTemperature = parseFloat(temperatureInput.value);
+                // Set to 1.0 and disable
+                temperatureInput.value = '1.0';
+                temperatureInput.disabled = true;
+                currentTemperature = 1.0;
+            } else {
+                // Restore previous temperature and enable
+                temperatureInput.value = savedTemperature.toString();
+                temperatureInput.disabled = false;
+                currentTemperature = savedTemperature;
+            }
+        }
+
+        // Handle temperature input change
+        function onTemperatureChange() {
+            const temperatureInput = document.getElementById('temperatureInput');
+            const value = parseFloat(temperatureInput.value);
+            
+            // Validate range
+            if (value < 0) {
+                temperatureInput.value = '0';
+                currentTemperature = 0;
+            } else if (value > 2) {
+                temperatureInput.value = '2';
+                currentTemperature = 2;
+            } else {
+                currentTemperature = value;
+            }
+            
+            // Save temperature if not in thinking mode
+            if (!thinkingMode) {
+                savedTemperature = currentTemperature;
+                localStorage.setItem('temperature', savedTemperature.toString());
+            }
+        }
+
         // Delete last exchange (last assistant message and preceding user message)
         function deleteLastExchange() {
             const chatContainer = document.getElementById('chatContainer');
@@ -957,14 +1032,8 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                 return;
             }
             
-            // Get the user message content (strip thinking tags if present)
+            // Get the user message content
             const userMessageContent = messages[precedingUserIndex].querySelector('.message-content').textContent.trim();
-            let cleanUserMessage = userMessageContent;
-            
-            // Remove thinking mode prefix if it exists
-            if (cleanUserMessage.startsWith('\n\n')) {
-                cleanUserMessage = cleanUserMessage.substring(2);
-            }
             
             // Remove the messages from the DOM
             messages[lastAssistantIndex].remove();
@@ -978,7 +1047,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             
             // Put the user message back into the input box
             const messageInput = document.getElementById('messageInput');
-            messageInput.value = cleanUserMessage;
+            messageInput.value = userMessageContent;
             messageInput.focus();
             
             // Trigger auto-resize
@@ -1033,6 +1102,8 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                 timestamp: new Date().toISOString(),
                 model: document.getElementById('modelSelect').value,
                 thinkingMode: thinkingMode,
+                temperature: currentTemperature,
+                savedTemperature: savedTemperature,
                 sessionTokens: sessionTokens,
                 conversationHistory: conversationHistory,
                 // Also save the rendered chat for reference
@@ -1102,6 +1173,15 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                         updateShowThinkingToggleState();
                     }
 
+                    // Restore temperature settings if available
+                    if (chatData.temperature !== undefined) {
+                        currentTemperature = chatData.temperature;
+                    }
+                    if (chatData.savedTemperature !== undefined) {
+                        savedTemperature = chatData.savedTemperature;
+                    }
+                    updateTemperatureField();
+
                     // Rebuild the chat UI
                     rebuildChatFromHistory();
                     
@@ -1157,6 +1237,10 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
         document.addEventListener('DOMContentLoaded', function() {
             const messageInput = document.getElementById('messageInput');
             messageInput.addEventListener('input', autoResizeTextarea);
+            
+            // Add temperature input event listener
+            const temperatureInput = document.getElementById('temperatureInput');
+            temperatureInput.addEventListener('input', onTemperatureChange);
         });
 
         // Dynamic width adjustment
@@ -1166,7 +1250,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             
             // Check if any content needs horizontal scrolling
             let needsExpansion = false;
-            let maxRequiredWidth = 1080; // Start with default width (updated from 900)
+            let maxRequiredWidth = 1080; // Start with default width
             
             // Check all message contents
             const messages = chatContainer.querySelectorAll('.message-content');
@@ -1287,9 +1371,18 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                 showThinking = true;
                 updateShowThinkingToggle();
             }
+
+            // Load temperature preference
+            const savedTemp = localStorage.getItem('temperature');
+            if (savedTemp) {
+                savedTemperature = parseFloat(savedTemp);
+                currentTemperature = savedTemperature;
+                document.getElementById('temperatureInput').value = savedTemperature.toString();
+            }
             
             // Update show thinking toggle state on load
             updateShowThinkingToggleState();
+            updateTemperatureField();
             
             updateMaxTokensInfo();
             updateSessionTokensDisplay();
@@ -1316,6 +1409,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             updateThinkingToggle();
             updateMaxTokensInfo();
             updateShowThinkingToggleState();
+            updateTemperatureField();
         }
 
         function toggleShowThinking() {
@@ -1434,7 +1528,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                         'anthropic-dangerous-direct-browser-access': 'true' // Required for browser access
                     },
                     body: JSON.stringify({
-                        model: 'claude-sonnet-4-5-20250929',
+                        model: 'claude-sonnet-4-20250514',
                         max_tokens: 10,
                         messages: [{role: 'user', content: 'test'}]
                     })
@@ -1492,19 +1586,13 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             
             if (!message) return;
 
-            // Add user message to chat
+            // Add user message to chat (display as-is)
             await addMessageToChat('user', message);
             
-            // Prepare the message content based on thinking mode
-            let messageContent = message;
-            if (thinkingMode) {
-                messageContent = `\n\n${message}`;
-            }
-            
-            // Add to conversation history
+            // Add to conversation history (plain message without any modification)
             conversationHistory.push({
                 role: 'user',
-                content: messageContent
+                content: message
             });
 
             // Clear input and reset height
@@ -1523,15 +1611,24 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                 const maxTokens = getMaxTokensForModel(selectedModel);
                 
                 const modeInfo = thinkingMode ? ' (thinking mode ON with 4000 thinking tokens)' : '';
-                updateDebugInfo(`Sending request to model: ${selectedModel} with max_tokens: ${maxTokens}${modeInfo}`);
+                updateDebugInfo(`Sending request to model: ${selectedModel} with max_tokens: ${maxTokens}, temperature: ${currentTemperature}${modeInfo}`);
                 
+                // Build request body
                 const requestBody = {
                     model: selectedModel,
                     max_tokens: maxTokens,
                     messages: conversationHistory,
-                    temperature: 0.7,
+                    temperature: currentTemperature,
                     system: "You are a helpful AI assistant."
                 };
+
+                // **KEY FIX: Add thinking parameter when thinking mode is enabled**
+                if (thinkingMode) {
+                    requestBody.thinking = {
+                        type: "enabled",
+                        budget_tokens: THINKING_TOKENS
+                    };
+                }
 
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -1559,7 +1656,21 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                 }
 
                 const data = await response.json();
-                const assistantMessage = data.content[0].text;
+                
+                // Extract text content from response
+                let assistantMessage = '';
+                let thinkingContent = '';
+                
+                // Handle content blocks (may include thinking blocks)
+                if (data.content && Array.isArray(data.content)) {
+                    for (const block of data.content) {
+                        if (block.type === 'thinking') {
+                            thinkingContent = block.thinking || '';
+                        } else if (block.type === 'text') {
+                            assistantMessage += block.text;
+                        }
+                    }
+                }
                 
                 // Update token counts from API response
                 if (data.usage) {
@@ -1569,13 +1680,10 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                     updateSessionTokensDisplay();
                 }
                 
-                // Process the response to handle thinking tags if present
-                const processedMessage = processThinkingContent(assistantMessage);
-                
                 // Add assistant response to chat with markdown rendering
-                await addMessageToChat('assistant', processedMessage.displayContent, processedMessage.thinkingContent);
+                await addMessageToChat('assistant', assistantMessage, thinkingContent);
                 
-                // Add to conversation history (keep the full response for context)
+                // Add to conversation history (store the full message)
                 conversationHistory.push({
                     role: 'assistant',
                     content: assistantMessage
@@ -1598,13 +1706,13 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                 }
             } finally {
                 sendButton.disabled = false;
-                resetSessionTokens();
 				messageInput.focus();
             }
         }
 
         function processThinkingContent(content) {
-            // Extract thinking content if present
+            // This function is kept for backward compatibility with saved chats
+            // that might have thinking tags in the content
             const thinkingRegex = /<thinking>([\s\S]*?)<\/thinking>/g;
             let thinkingContent = '';
             let displayContent = content;
@@ -1930,37 +2038,6 @@ Here are your options:
 3. USE A PUBLIC CORS PROXY (Not recommended for production):
    Update API_URL to: https://cors-anywhere.herokuapp.com/https://api.anthropic.com/v1/messages
         `);
-
-		function customConfirm(message, heading = "Confirm") {
-		  return new Promise((resolve) => {
-			// Create modal elements
-			const modal = document.createElement('div');
-			modal.innerHTML = `
-			  <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-						  background: rgba(0,0,0,0.5); display: flex; align-items: center; 
-						  justify-content: center; z-index: 9999;">
-				<div style="background: white; padding: 20px; border-radius: 8px; 
-							min-width: 300px;">
-				  <h3>${heading}</h3>
-				  <p>${message}</p>
-				  <button id="confirmYes">OK</button>
-				  <button id="confirmNo">Cancel</button>
-				</div>
-			  </div>
-			`;
-			document.body.appendChild(modal);
-			
-			modal.querySelector('#confirmYes').onclick = () => {
-			  document.body.removeChild(modal);
-			  resolve(true);
-			};
-			modal.querySelector('#confirmNo').onclick = () => {
-			  document.body.removeChild(modal);
-			  resolve(false);
-			};
-		  });
-		}
-
     </script>
 </body>
 </html>
