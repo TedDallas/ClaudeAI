@@ -1295,26 +1295,29 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             reader.readAsText(file);
         }
 
-        // Rebuild chat UI from conversation history
-        async function rebuildChatFromHistory() {
-            const chatContainer = document.getElementById('chatContainer');
-            chatContainer.innerHTML = ''; // Clear current chat
-            
-            // Rebuild each message synchronously
-            for (const msg of conversationHistory) {
-                const processedMessage = processThinkingContent(msg.content);
-                await addMessageToChat(msg.role, processedMessage.displayContent, processedMessage.thinkingContent, false);
-            }
-            
-            // Now that all messages are added, update delete buttons
-            updateDeleteButtons();
-            
-            // Scroll to bottom
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-            
-            // Check width adjustment
-            setTimeout(checkAndAdjustContainerWidth, 100);
-        }
+		// Rebuild chat UI from conversation history
+		async function rebuildChatFromHistory() {
+			const chatContainer = document.getElementById('chatContainer');
+			chatContainer.innerHTML = ''; // Clear current chat
+			
+			// Rebuild each message synchronously
+			for (const msg of conversationHistory) {
+				const processedMessage = processThinkingContent(msg.content);
+				await addMessageToChat(msg.role, processedMessage.displayContent, processedMessage.thinkingContent, false);
+			}
+			
+			// Wait a bit longer for all rendering to complete, especially for large messages
+			await new Promise(resolve => setTimeout(resolve, 300));
+			
+			// Now that all messages are fully rendered, update delete buttons
+			updateDeleteButtons();
+			
+			// Scroll to bottom
+			chatContainer.scrollTop = chatContainer.scrollHeight;
+			
+			// Check width adjustment after everything is rendered
+			setTimeout(checkAndAdjustContainerWidth, 100);
+		}
 
         // Auto-resize textarea
         function autoResizeTextarea() {
@@ -1868,14 +1871,17 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                     mainContentDiv.innerHTML = renderedContent;
                     contentDiv.appendChild(mainContentDiv);
                     
-                    // Wait for code blocks to be processed
-                    await new Promise(resolve => {
-                        setTimeout(() => {
-                            addCopyButtonsToCodeBlocks(contentDiv);
-                            checkAndAdjustContainerWidth();
-                            resolve();
-                        }, 100);
-                    });
+					// Wait for code blocks to be processed
+					await new Promise(resolve => {
+						setTimeout(() => {
+							addCopyButtonsToCodeBlocks(contentDiv);
+							resolve();
+						}, 150); // Increased delay for large code blocks
+					});
+
+					// Check width after a brief delay to ensure DOM is updated
+					setTimeout(checkAndAdjustContainerWidth, 50);					
+
                 } catch (e) {
                     console.error('Error rendering markdown:', e);
                     // Fallback to plain text
