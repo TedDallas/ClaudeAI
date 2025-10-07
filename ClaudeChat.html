@@ -455,7 +455,7 @@
             /* Allow content to determine width */
             width: fit-content;
             max-width: 100%;
-            position: relative; /* Make this the positioning context for the delete button */
+            position: relative; /* FIXED: Added for proper delete button positioning */
         }
 
         .message.user .message-content {
@@ -469,7 +469,7 @@
             color: #333;
         }
 
-		/* Delete button styles */
+		/* Delete button styles - FIXED */
 		.delete-button {
 			position: absolute;
 			top: 8px;
@@ -492,13 +492,13 @@
 			line-height: 1;
 			opacity: 0;
 			transition: opacity 0.2s, background 0.2s;
-			z-index: 100; /* Increased z-index to ensure it's always on top */
+			z-index: 1000;
 			padding: 0;
 			overflow: hidden;
-			pointer-events: auto; /* Ensure button is always clickable */
+			pointer-events: auto;
 		}
 
-		/* Show delete button on hover of the entire message, not just message-content */
+		/* Show delete button on hover of the entire message */
 		.message.assistant:hover .delete-button {
 			opacity: 0.7;
 		}
@@ -675,6 +675,7 @@
             display: flex;
             gap: 10px;
             align-items: flex-end;
+            position: relative;
         }
 
         #messageInput {
@@ -696,18 +697,33 @@
             border-color: #667eea;
         }
 
-        #sendButton {
+        /* Button container for Send/Cancel */
+        .button-container {
+            position: relative;
+            width: 80px;
+            height: 44px;
+            align-self: flex-end;
+        }
+
+        #sendButton, #cancelButton {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             padding: 12px 24px;
-            background: #667eea;
             color: white;
             border: none;
             border-radius: 25px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            transition: background 0.3s;
-            height: 44px;
-            align-self: flex-end;
+            transition: background 0.3s, opacity 0.3s;
+        }
+
+        #sendButton {
+            background: #667eea;
+            opacity: 1;
         }
 
         #sendButton:hover:not(:disabled) {
@@ -717,6 +733,26 @@
         #sendButton:disabled {
             background: #ccc;
             cursor: not-allowed;
+        }
+
+        #sendButton.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #cancelButton {
+            background: #dc3545;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #cancelButton.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #cancelButton:hover {
+            background: #c82333;
         }
 
         .loading {
@@ -816,8 +852,8 @@
             <div class="model-selector">
                 <label for="modelSelect">Model:</label>
                 <select id="modelSelect" onchange="updateMaxTokensInfo()">
-                    <option value="claude-sonnet-4-5-20250929">Claude 4.5 Sonnet</option> <!-- claude-sonnet-4-5-20250929 is the latest version of Claude Sonnet. Do not change this!!! -->
-                    <option value="claude-opus-4-1-20250805">Claude 4.1 Opus</option> <!-- claude-opus-4-1-20250805 is the latest version of Claude Opus. Do not change this!!! -->
+                    <option value="claude-sonnet-4-5-20250929">Claude 4.5 Sonnet</option>
+                    <option value="claude-opus-4-1-20250805">Claude 4.1 Opus</option>
                 </select>
                 <span class="max-tokens-info" id="maxTokensInfo">Max tokens: 64000</span>
                 <span class="session-tokens-info" id="sessionTokensInfo">Session: 0 tokens</span>
@@ -872,7 +908,10 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
         <div class="input-container">
             <div class="input-wrapper">
                 <textarea id="messageInput" placeholder="Type your message... (Press Enter to send, Shift+Enter for new line)" onkeydown="handleKeyDown(event)"></textarea>
-                <button id="sendButton" onclick="sendMessage()">Send</button>
+                <div class="button-container">
+                    <button id="sendButton" onclick="sendMessage()">Send</button>
+                    <button id="cancelButton" onclick="cancelRequest()">Cancel</button>
+                </div>
             </div>
         </div>
     </div>
@@ -909,10 +948,15 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
         // Thinking tokens configuration
         let currentThinkingTokens = 4000; // Default thinking tokens
 
+        // Request cancellation
+        let currentAbortController = null;
+        let currentUserMessage = '';
+        let currentLoadingId = null;
+
         // Model max tokens configuration
         const MODEL_MAX_TOKENS = {
-            'claude-sonnet-4-5-20250929': 64000, /*claude-sonnet-4-5-20250929 is the latest version of Claude Sonnet. Do not change this!!!*/
-            'claude-opus-4-1-20250805': 32000 /* claude-opus-4-1-20250805 is the latest version of Claude Opus. Do not change this!!!*/
+            'claude-sonnet-4-5-20250929': 64000,
+            'claude-opus-4-1-20250805': 32000
         };
 
         // Configure marked options
@@ -1074,6 +1118,68 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             thinkingIndicatorText.textContent = `Thinking mode enabled (${currentThinkingTokens.toLocaleString()} thinking tokens).`;
         }
 
+        // Cancel the current request
+        function cancelRequest() {
+            if (currentAbortController) {
+                // Abort the fetch request
+                currentAbortController.abort();
+                
+                // Remove loading indicator
+                if (currentLoadingId) {
+                    removeLoading(currentLoadingId);
+                    currentLoadingId = null;
+                }
+                
+                // Remove the user message from chat
+                const chatContainer = document.getElementById('chatContainer');
+                const messages = chatContainer.querySelectorAll('.message');
+                if (messages.length > 0) {
+                    const lastMessage = messages[messages.length - 1];
+                    if (lastMessage.classList.contains('user')) {
+                        lastMessage.remove();
+                    }
+                }
+                
+                // Remove the user message from conversation history
+                if (conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role === 'user') {
+                    conversationHistory.pop();
+                }
+                
+                // Restore the message to input
+                const messageInput = document.getElementById('messageInput');
+                messageInput.value = currentUserMessage;
+                autoResizeTextarea();
+                
+                // Reset state
+                currentAbortController = null;
+                currentUserMessage = '';
+                
+                // Hide cancel button, show send button
+                toggleCancelButton(false);
+                
+                // Re-enable send button
+                const sendButton = document.getElementById('sendButton');
+                sendButton.disabled = false;
+                
+                updateDebugInfo('Request cancelled');
+                messageInput.focus();
+            }
+        }
+
+        // Toggle cancel button visibility
+        function toggleCancelButton(show) {
+            const sendButton = document.getElementById('sendButton');
+            const cancelButton = document.getElementById('cancelButton');
+            
+            if (show) {
+                sendButton.classList.add('hidden');
+                cancelButton.classList.add('visible');
+            } else {
+                sendButton.classList.remove('hidden');
+                cancelButton.classList.remove('visible');
+            }
+        }
+
         // Delete last exchange (last assistant message and preceding user message)
         function deleteLastExchange() {
             const chatContainer = document.getElementById('chatContainer');
@@ -1142,7 +1248,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             updateDebugInfo('Last exchange deleted and message restored to input');
         }
 
-        // Update delete buttons - only show on last assistant message
+        // Update delete buttons - only show on last assistant message - FIXED
         function updateDeleteButtons() {
             const chatContainer = document.getElementById('chatContainer');
             
@@ -1156,15 +1262,17 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             // Only add delete button to the last assistant message if there are at least 2 messages
             if (assistantMessages.length > 1) {
                 const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
-                const messageContent = lastAssistantMessage.querySelector('.message-content');
                 
-                // Double-check that messageContent exists
+                // Create delete button
+                const deleteButton = document.createElement('button');
+                deleteButton.className = 'delete-button';
+                deleteButton.innerHTML = '×';
+                deleteButton.title = 'Delete this response and restore your message';
+                deleteButton.onclick = deleteLastExchange;
+                
+                // Append to message-content instead of message container
+                const messageContent = lastAssistantMessage.querySelector('.message-content');
                 if (messageContent) {
-                    const deleteButton = document.createElement('button');
-                    deleteButton.className = 'delete-button';
-                    deleteButton.innerHTML = '×';
-                    deleteButton.title = 'Delete this response and restore your message';
-                    deleteButton.onclick = deleteLastExchange;
                     messageContent.appendChild(deleteButton);
                 }
             }
@@ -1569,18 +1677,22 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             }
         }
 
-        function updateMaxTokensInfo() {
-            const selectedModel = document.getElementById('modelSelect').value;
-            const baseMaxTokens = MODEL_MAX_TOKENS[selectedModel];
-            const availableTokens = thinkingMode ? baseMaxTokens - currentThinkingTokens : baseMaxTokens;
-            
-            let infoText = `Max tokens: ${availableTokens.toLocaleString()}`;
-            if (thinkingMode) {
-                infoText += ` (${currentThinkingTokens.toLocaleString()} reserved for thinking)`;
-            }
-            
-            document.getElementById('maxTokensInfo').textContent = infoText;
-        }
+		function updateMaxTokensInfo() {
+			const selectedModel = document.getElementById('modelSelect').value;
+			const baseMaxTokens = MODEL_MAX_TOKENS[selectedModel];
+			
+			let infoText;
+			if (thinkingMode) {
+				// When thinking mode is ON, show tokens reserved for thinking
+				const availableTokens = baseMaxTokens - currentThinkingTokens;
+				infoText = `Max tokens: ${availableTokens.toLocaleString()} (${currentThinkingTokens.toLocaleString()} reserved for thinking)`;
+			} else {
+				// When thinking mode is OFF, show total available tokens
+				infoText = `Max tokens: ${baseMaxTokens.toLocaleString()}`;
+			}
+			
+			document.getElementById('maxTokensInfo').textContent = infoText;
+		}
 
         function getMaxTokensForModel(modelName) {
             const baseMaxTokens = MODEL_MAX_TOKENS[modelName] || 4096; // Default fallback
@@ -1635,7 +1747,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                         'anthropic-dangerous-direct-browser-access': 'true' // Required for browser access
                     },
                     body: JSON.stringify({
-                        model: 'claude-sonnet-4-5-20250929', /*claude-sonnet-4-5-20250929 is the latest version of Claude Sonnet. Do not change this!!!*/
+                        model: 'claude-sonnet-4-5-20250929',
                         max_tokens: 10,
                         messages: [{role: 'user', content: 'test'}]
                     })
@@ -1693,6 +1805,9 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             
             if (!message) return;
 
+            // Store the message for potential cancellation
+            currentUserMessage = message;
+
             // Add user message to chat (display as-is)
             await addMessageToChat('user', message);
             
@@ -1706,12 +1821,16 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             messageInput.value = '';
             messageInput.style.height = '44px';
             
-            // Disable send button
+            // Disable send button and show cancel button
             const sendButton = document.getElementById('sendButton');
             sendButton.disabled = true;
+            toggleCancelButton(true);
             
             // Show loading indicator
-            const loadingId = showLoading();
+            currentLoadingId = showLoading();
+
+            // Create abort controller for cancellation
+            currentAbortController = new AbortController();
 
             try {
                 const selectedModel = document.getElementById('modelSelect').value;
@@ -1729,7 +1848,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                     system: "You are a helpful AI assistant."
                 };
 
-                // **KEY FIX: Add thinking parameter when thinking mode is enabled**
+                // Add thinking parameter when thinking mode is enabled
                 if (thinkingMode) {
                     requestBody.thinking = {
                         type: "enabled",
@@ -1743,13 +1862,15 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                         'Content-Type': 'application/json',
                         'x-api-key': API_KEY,
                         'anthropic-version': '2023-06-01',
-                        'anthropic-dangerous-direct-browser-access': 'true' // Required for browser access
+                        'anthropic-dangerous-direct-browser-access': 'true'
                     },
-                    body: JSON.stringify(requestBody)
+                    body: JSON.stringify(requestBody),
+                    signal: currentAbortController.signal
                 });
 
                 // Remove loading indicator
-                removeLoading(loadingId);
+                removeLoading(currentLoadingId);
+                currentLoadingId = null;
 
                 if (!response.ok) {
                     let errorMessage;
@@ -1802,18 +1923,31 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
                 updateDebugInfo('Message sent successfully');
 
             } catch (error) {
-                removeLoading(loadingId);
-                showError(error.message);
-                updateDebugInfo(`Error: ${error.message}`);
-                console.error('Error:', error);
-                
-                // Provide specific help for common errors
-                if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
-                    showError('CORS blocking detected. See console for solutions.');
+                if (error.name === 'AbortError') {
+                    // Request was cancelled, don't show error
+                    updateDebugInfo('Request cancelled by user');
+                } else {
+                    removeLoading(currentLoadingId);
+                    currentLoadingId = null;
+                    showError(error.message);
+                    updateDebugInfo(`Error: ${error.message}`);
+                    console.error('Error:', error);
+                    
+                    // Provide specific help for common errors
+                    if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+                        showError('CORS blocking detected. See console for solutions.');
+                    }
                 }
             } finally {
+                // Reset state
+                currentAbortController = null;
+                currentUserMessage = '';
+                currentLoadingId = null;
+                
+                // Re-enable send button and hide cancel button
                 sendButton.disabled = false;
-				messageInput.focus();
+                toggleCancelButton(false);
+                messageInput.focus();
             }
         }
 
@@ -1876,7 +2010,7 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
 						setTimeout(() => {
 							addCopyButtonsToCodeBlocks(contentDiv);
 							resolve();
-						}, 150); // Increased delay for large code blocks
+						}, 150);
 					});
 
 					// Check width after a brief delay to ensure DOM is updated
