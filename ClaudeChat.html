@@ -63,17 +63,11 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             width: 100%;
             min-width: 720px;
-            max-width: 1080px;
+            max-width: 1350px;
             height: 90vh;
             display: flex;
             flex-direction: column;
-            transition: max-width 0.3s ease;
             position: relative;
-        }
-
-        /* Dynamic width adjustment for container */
-        .container.expanded {
-            max-width: 90vw;
         }
 
         .header {
@@ -403,17 +397,12 @@
         .chat-container {
             flex: 1;
             overflow-y: auto;
-            overflow-x: hidden;
+            overflow-x: auto;
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 15px;
             position: relative;
-        }
-
-        /* Add horizontal scroll when content exceeds container width */
-        .chat-container.needs-horizontal-scroll {
-            overflow-x: auto;
         }
 
         .message {
@@ -442,8 +431,7 @@
 
         .message.assistant {
             align-self: flex-start;
-            /* Allow assistant messages to expand as needed */
-            max-width: calc(100% - 46px); /* Account for avatar and gap */
+            max-width: calc(100% - 46px);
         }
 
         .message-content {
@@ -452,10 +440,9 @@
             line-height: 1.6;
             word-wrap: break-word;
             overflow-wrap: break-word;
-            /* Allow content to determine width */
             width: fit-content;
             max-width: 100%;
-            position: relative; /* FIXED: Added for proper delete button positioning */
+            position: relative;
         }
 
         .message.user .message-content {
@@ -469,7 +456,7 @@
             color: #333;
         }
 
-		/* Delete button styles - FIXED */
+		/* Delete button styles */
 		.delete-button {
 			position: absolute;
 			top: 8px;
@@ -498,7 +485,6 @@
 			pointer-events: auto;
 		}
 
-		/* Show delete button on hover of the entire message */
 		.message.assistant:hover .delete-button {
 			opacity: 0.7;
 		}
@@ -711,7 +697,7 @@
 			left: 0;
 			width: 100%;
 			height: 100%;
-			padding: 0;  /* Remove padding */
+			padding: 0;
 			color: white;
 			border: none;
 			border-radius: 25px;
@@ -936,15 +922,15 @@
         
         // Thinking mode state
         let thinkingMode = false;
-        let showThinking = false; // Default to off
-        let setupVisible = false; // Setup toggle state
+        let showThinking = false;
+        let setupVisible = false;
 
         // Temperature state
         let currentTemperature = 0.7;
-        let savedTemperature = 0.7; // Store temperature when thinking mode is off
+        let savedTemperature = 0.7;
 
         // Thinking tokens configuration
-        let currentThinkingTokens = 4000; // Default thinking tokens
+        let currentThinkingTokens = 4000;
 
         // Request cancellation
         let currentAbortController = null;
@@ -960,7 +946,6 @@
         // Configure marked options
         marked.setOptions({
             highlight: function(code, lang) {
-                // Map common language aliases
                 const languageMap = {
                     'py': 'python',
                     'js': 'javascript',
@@ -994,16 +979,13 @@
             mangle: false
         });
 
-        // Function to set initial greeting message based on API key status
         function setInitialGreeting() {
             const chatContainer = document.getElementById('chatContainer');
             let greetingMessage;
             
             if (API_KEY) {
-                // API key is set - show default greeting
                 greetingMessage = "Hello! I'm Claude. How can I help you today?";
             } else {
-                // No API key - show setup instructions
                 greetingMessage = "Hello! I'm Claude. Please enter your Anthropic API key above. \n\nNote: Make sure your API key starts with \"sk-ant-api\" and that CORS is handled properly. You might need to use a proxy server for production use, but for local testing, your browser might block direct API calls due to CORS policy.";
             }
             
@@ -1015,7 +997,6 @@
             `;
         }
 
-        // Toggle Setup visibility
         function toggleSetup() {
             setupVisible = !setupVisible;
             const setupToggle = document.getElementById('setupToggle');
@@ -1029,11 +1010,9 @@
                 apiKeySection.classList.add('hidden');
             }
             
-            // Save preference
             localStorage.setItem('setup_visible', setupVisible.toString());
         }
 
-        // Update Setup toggle on load
         function updateSetupToggle() {
             const setupToggle = document.getElementById('setupToggle');
             const apiKeySection = document.getElementById('apiKeySection');
@@ -1047,26 +1026,21 @@
             }
         }
 
-        // Update temperature field based on thinking mode
         function updateTemperatureField() {
             const temperatureInput = document.getElementById('temperatureInput');
             
             if (thinkingMode) {
-                // Save current temperature before switching to thinking mode
                 savedTemperature = parseFloat(temperatureInput.value);
-                // Set to 1.0 and disable
                 temperatureInput.value = '1.0';
                 temperatureInput.disabled = true;
                 currentTemperature = 1.0;
             } else {
-                // Restore previous temperature and enable
                 temperatureInput.value = savedTemperature.toString();
                 temperatureInput.disabled = false;
                 currentTemperature = savedTemperature;
             }
         }
 
-        // Update thinking tokens field based on thinking mode
         function updateThinkingTokensField() {
             const thinkingTokensField = document.getElementById('thinkingTokensField');
             const thinkingTokensInput = document.getElementById('thinkingTokensInput');
@@ -1080,12 +1054,10 @@
             }
         }
 
-        // Handle temperature input change
         function onTemperatureChange() {
             const temperatureInput = document.getElementById('temperatureInput');
             const value = parseFloat(temperatureInput.value);
             
-            // Validate range
             if (value < 0) {
                 temperatureInput.value = '0';
                 currentTemperature = 0;
@@ -1096,21 +1068,18 @@
                 currentTemperature = value;
             }
             
-            // Save temperature if not in thinking mode
             if (!thinkingMode) {
                 savedTemperature = currentTemperature;
                 localStorage.setItem('temperature', savedTemperature.toString());
             }
         }
 
-        // Handle thinking tokens input change
         function onThinkingTokensChange() {
             const thinkingTokensInput = document.getElementById('thinkingTokensInput');
             const selectedModel = document.getElementById('modelSelect').value;
             const maxTokensForModel = MODEL_MAX_TOKENS[selectedModel];
             let value = parseInt(thinkingTokensInput.value);
             
-            // Validate range
             if (value < 1000) {
                 value = 1000;
                 thinkingTokensInput.value = value;
@@ -1120,36 +1089,25 @@
             }
             
             currentThinkingTokens = value;
-            
-            // Update the thinking indicator text
             updateThinkingIndicatorText();
-            
-            // Update max tokens info
             updateMaxTokensInfo();
-            
-            // Save preference
             localStorage.setItem('thinking_tokens', currentThinkingTokens.toString());
         }
 
-        // Update thinking indicator text with current token count
         function updateThinkingIndicatorText() {
             const thinkingIndicatorText = document.getElementById('thinkingIndicatorText');
             thinkingIndicatorText.textContent = `Thinking mode enabled (${currentThinkingTokens.toLocaleString()} thinking tokens).`;
         }
 
-        // Cancel the current request
         function cancelRequest() {
             if (currentAbortController) {
-                // Abort the fetch request
                 currentAbortController.abort();
                 
-                // Remove loading indicator
                 if (currentLoadingId) {
                     removeLoading(currentLoadingId);
                     currentLoadingId = null;
                 }
                 
-                // Remove the user message from chat
                 const chatContainer = document.getElementById('chatContainer');
                 const messages = chatContainer.querySelectorAll('.message');
                 if (messages.length > 0) {
@@ -1159,24 +1117,19 @@
                     }
                 }
                 
-                // Remove the user message from conversation history
                 if (conversationHistory.length > 0 && conversationHistory[conversationHistory.length - 1].role === 'user') {
                     conversationHistory.pop();
                 }
                 
-                // Restore the message to input
                 const messageInput = document.getElementById('messageInput');
                 messageInput.value = currentUserMessage;
                 autoResizeTextarea();
                 
-                // Reset state
                 currentAbortController = null;
                 currentUserMessage = '';
                 
-                // Hide cancel button, show send button
                 toggleCancelButton(false);
                 
-                // Re-enable send button
                 const sendButton = document.getElementById('sendButton');
                 sendButton.disabled = false;
                 
@@ -1185,7 +1138,6 @@
             }
         }
 
-        // Toggle cancel button visibility
         function toggleCancelButton(show) {
             const sendButton = document.getElementById('sendButton');
             const cancelButton = document.getElementById('cancelButton');
@@ -1199,17 +1151,14 @@
             }
         }
 
-        // Delete last exchange (last assistant message and preceding user message)
         function deleteLastExchange() {
             const chatContainer = document.getElementById('chatContainer');
             const messages = chatContainer.querySelectorAll('.message');
             
-            // Need at least 2 messages (user + assistant) beyond the initial greeting
             if (messages.length < 2) {
                 return;
             }
             
-            // Find the last assistant message
             let lastAssistantIndex = -1;
             for (let i = messages.length - 1; i >= 0; i--) {
                 if (messages[i].classList.contains('assistant')) {
@@ -1218,12 +1167,10 @@
                 }
             }
             
-            // If no assistant message found or it's the initial greeting, do nothing
             if (lastAssistantIndex <= 0) {
                 return;
             }
             
-            // Find the user message that precedes this assistant message
             let precedingUserIndex = -1;
             for (let i = lastAssistantIndex - 1; i >= 0; i--) {
                 if (messages[i].classList.contains('user')) {
@@ -1232,64 +1179,46 @@
                 }
             }
             
-            // If no preceding user message found, do nothing
             if (precedingUserIndex < 0) {
                 return;
             }
             
-            // Get the user message content
             const userMessageContent = messages[precedingUserIndex].querySelector('.message-content').textContent.trim();
             
-            // Remove the messages from the DOM
             messages[lastAssistantIndex].remove();
             messages[precedingUserIndex].remove();
             
-            // Update conversation history - remove last 2 entries (user + assistant)
             if (conversationHistory.length >= 2) {
-                conversationHistory.pop(); // Remove assistant message
-                conversationHistory.pop(); // Remove user message
+                conversationHistory.pop();
+                conversationHistory.pop();
             }
             
-            // Put the user message back into the input box
             const messageInput = document.getElementById('messageInput');
             messageInput.value = userMessageContent;
             messageInput.focus();
             
-            // Trigger auto-resize
             autoResizeTextarea();
-            
-            // Check width adjustment after deletion
-            setTimeout(checkAndAdjustContainerWidth, 100);
-            
-            // Update delete buttons
             updateDeleteButtons();
-            
             updateDebugInfo('Last exchange deleted and message restored to input');
         }
 
-        // Update delete buttons - only show on last assistant message - FIXED
         function updateDeleteButtons() {
             const chatContainer = document.getElementById('chatContainer');
             
-            // Remove all existing delete buttons first
             const existingButtons = chatContainer.querySelectorAll('.delete-button');
             existingButtons.forEach(btn => btn.remove());
             
-            // Get all assistant messages
             const assistantMessages = chatContainer.querySelectorAll('.message.assistant');
             
-            // Only add delete button to the last assistant message if there are at least 2 messages
             if (assistantMessages.length > 1) {
                 const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
                 
-                // Create delete button
                 const deleteButton = document.createElement('button');
                 deleteButton.className = 'delete-button';
                 deleteButton.innerHTML = '×';
                 deleteButton.title = 'Delete this response and restore your message';
                 deleteButton.onclick = deleteLastExchange;
                 
-                // Append to message-content instead of message container
                 const messageContent = lastAssistantMessage.querySelector('.message-content');
                 if (messageContent) {
                     messageContent.appendChild(deleteButton);
@@ -1297,7 +1226,6 @@
             }
         }
 
-        // Save chat to file
         function saveChat() {
             if (conversationHistory.length === 0) {
                 alert('No chat history to save!');
@@ -1314,23 +1242,19 @@
                 thinkingTokens: currentThinkingTokens,
                 sessionTokens: sessionTokens,
                 conversationHistory: conversationHistory,
-                // Also save the rendered chat for reference
                 chatHtml: document.getElementById('chatContainer').innerHTML
             };
 
             const dataStr = JSON.stringify(chatData, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
             
-            // Create download link
             const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
             link.href = url;
             
-            // Generate filename with timestamp
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
             link.download = `claude-chat-${timestamp}.json`;
             
-            // Trigger download
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1339,12 +1263,10 @@
             updateDebugInfo('Chat saved successfully');
         }
 
-        // Load chat from file
         function loadChat() {
             document.getElementById('fileInput').click();
         }
 
-        // Handle file selection
         function handleFileSelect(event) {
             const file = event.target.files[0];
             if (!file) return;
@@ -1354,34 +1276,28 @@
                 try {
                     const chatData = JSON.parse(e.target.result);
                     
-                    // Validate the data
                     if (!chatData.conversationHistory || !Array.isArray(chatData.conversationHistory)) {
                         throw new Error('Invalid chat file format');
                     }
 
-                    // Load the conversation history
                     conversationHistory = chatData.conversationHistory;
                     
-                    // Restore session tokens if available
                     if (chatData.sessionTokens) {
                         sessionTokens = chatData.sessionTokens;
                         updateSessionTokensDisplay();
                     }
                     
-                    // Restore model selection if available
                     if (chatData.model) {
                         document.getElementById('modelSelect').value = chatData.model;
                         updateMaxTokensInfo();
                     }
                     
-                    // Restore thinking mode if available
                     if (chatData.thinkingMode !== undefined) {
                         thinkingMode = chatData.thinkingMode;
                         updateThinkingToggle();
                         updateShowThinkingToggleState();
                     }
 
-                    // Restore temperature settings if available
                     if (chatData.temperature !== undefined) {
                         currentTemperature = chatData.temperature;
                     }
@@ -1389,7 +1305,6 @@
                         savedTemperature = chatData.savedTemperature;
                     }
 
-                    // Restore thinking tokens if available
                     if (chatData.thinkingTokens !== undefined) {
                         currentThinkingTokens = chatData.thinkingTokens;
                         document.getElementById('thinkingTokensInput').value = currentThinkingTokens;
@@ -1399,158 +1314,62 @@
                     updateTemperatureField();
                     updateThinkingTokensField();
 
-                    // Rebuild the chat UI
                     rebuildChatFromHistory();
                     
                     updateDebugInfo('Chat loaded successfully');
-                    
-                    // Reset file input
                     event.target.value = '';
                     
                 } catch (error) {
                     alert('Error loading chat file: ' + error.message);
                     console.error('Error loading chat:', error);
-                    event.target.value = ''; // Reset file input
+                    event.target.value = '';
                 }
             };
             
             reader.onerror = function() {
                 alert('Error reading file');
-                event.target.value = ''; // Reset file input
+                event.target.value = '';
             };
             
             reader.readAsText(file);
         }
 
-		// Rebuild chat UI from conversation history
 		async function rebuildChatFromHistory() {
 			const chatContainer = document.getElementById('chatContainer');
-			chatContainer.innerHTML = ''; // Clear current chat
+			chatContainer.innerHTML = '';
 			
-			// Rebuild each message synchronously
 			for (const msg of conversationHistory) {
 				const processedMessage = processThinkingContent(msg.content);
 				await addMessageToChat(msg.role, processedMessage.displayContent, processedMessage.thinkingContent, false);
 			}
 			
-			// Wait a bit longer for all rendering to complete, especially for large messages
 			await new Promise(resolve => setTimeout(resolve, 300));
-			
-			// Now that all messages are fully rendered, update delete buttons
 			updateDeleteButtons();
-			
-			// Scroll to bottom
 			chatContainer.scrollTop = chatContainer.scrollHeight;
-			
-			// Check width adjustment after everything is rendered
-			setTimeout(checkAndAdjustContainerWidth, 100);
 		}
 
-        // Auto-resize textarea
         function autoResizeTextarea() {
             const textarea = document.getElementById('messageInput');
             textarea.style.height = 'auto';
             textarea.style.height = Math.min(textarea.scrollHeight, 200) + 'px';
         }
 
-        // Add input event listener for auto-resize
         document.addEventListener('DOMContentLoaded', function() {
             const messageInput = document.getElementById('messageInput');
             messageInput.addEventListener('input', autoResizeTextarea);
             
-            // Add temperature input event listener
             const temperatureInput = document.getElementById('temperatureInput');
             temperatureInput.addEventListener('input', onTemperatureChange);
 
-            // Add thinking tokens input event listener
             const thinkingTokensInput = document.getElementById('thinkingTokensInput');
             thinkingTokensInput.addEventListener('input', onThinkingTokensChange);
         });
 
-        // Dynamic width adjustment
-        function checkAndAdjustContainerWidth() {
-            const container = document.getElementById('mainContainer');
-            const chatContainer = document.getElementById('chatContainer');
-            
-            // Check if any content needs horizontal scrolling
-            let needsExpansion = false;
-            let maxRequiredWidth = 1080; // Start with default width
-            
-            // Check all message contents
-            const messages = chatContainer.querySelectorAll('.message-content');
-            messages.forEach(msg => {
-                // Check for code blocks and pre elements
-                const codeBlocks = msg.querySelectorAll('pre, code, table');
-                codeBlocks.forEach(block => {
-                    if (block.scrollWidth > block.clientWidth) {
-                        needsExpansion = true;
-                        maxRequiredWidth = Math.max(maxRequiredWidth, block.scrollWidth + 100); // Add padding
-                    }
-                });
-                
-                // Check the message content itself
-                if (msg.scrollWidth > msg.clientWidth) {
-                    needsExpansion = true;
-                    maxRequiredWidth = Math.max(maxRequiredWidth, msg.scrollWidth + 100);
-                }
-            });
-            
-            // Calculate 90% of viewport width
-            const maxAllowedWidth = window.innerWidth * 0.9;
-            
-            if (needsExpansion) {
-                // Expand container up to 90% of viewport width
-                if (maxRequiredWidth < maxAllowedWidth) {
-                    container.style.maxWidth = maxRequiredWidth + 'px';
-                    container.classList.remove('expanded');
-                    chatContainer.classList.remove('needs-horizontal-scroll');
-                } else {
-                    // Set to 90% and enable horizontal scroll
-                    container.style.maxWidth = '90vw';
-                    container.classList.add('expanded');
-                    chatContainer.classList.add('needs-horizontal-scroll');
-                }
-            } else {
-                // Reset to default if no expansion needed
-                container.style.maxWidth = '';
-                container.classList.remove('expanded');
-                chatContainer.classList.remove('needs-horizontal-scroll');
-            }
-        }
-
-        // Debounce function to prevent excessive calculations
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // Create debounced version of the check function
-        const debouncedCheckWidth = debounce(checkAndAdjustContainerWidth, 100);
-
-        // Add ResizeObserver to monitor content changes
-        const resizeObserver = new ResizeObserver(entries => {
-            debouncedCheckWidth();
-        });
-
-        // Add MutationObserver to watch for new content
-        const mutationObserver = new MutationObserver(mutations => {
-            debouncedCheckWidth();
-        });
-
-        // Update session tokens display
         function updateSessionTokensDisplay() {
             const sessionTokensInfo = document.getElementById('sessionTokensInfo');
             sessionTokensInfo.textContent = `Session: ${sessionTokens.total.toLocaleString()} tokens (in: ${sessionTokens.input.toLocaleString()}, out: ${sessionTokens.output.toLocaleString()})`;
         }
 
-        // Reset session tokens
         function resetSessionTokens() {
             sessionTokens = {
                 input: 0,
@@ -1560,46 +1379,37 @@
             updateSessionTokensDisplay();
         }
 
-        // Load API key and settings from localStorage on page load
         window.onload = function() {
             const savedKey = localStorage.getItem(STORAGE_KEY_PREFIX + 'anthropic_api_key');
             if (savedKey) {
                 API_KEY = savedKey;
                 document.getElementById('apiKeyInput').value = savedKey;
                 updateStatus(true);
-                // Default Setup to off if API key exists
                 setupVisible = false;
             } else {
-                // Default Setup to on if no API key
                 setupVisible = true;
             }
             
-            // Load setup visibility preference (overrides default)
             const savedSetupVisible = localStorage.getItem('setup_visible');
             if (savedSetupVisible !== null) {
                 setupVisible = savedSetupVisible === 'true';
             }
             
             updateSetupToggle();
-            
-            // Set initial greeting based on API key status
             setInitialGreeting();
             
-            // Load thinking mode preference
             const savedThinkingMode = localStorage.getItem('thinking_mode');
             if (savedThinkingMode === 'true') {
                 thinkingMode = true;
                 updateThinkingToggle();
             }
 
-            // Load show thinking preference (defaults to false)
             const savedShowThinking = localStorage.getItem('show_thinking');
             if (savedShowThinking === 'true') {
                 showThinking = true;
                 updateShowThinkingToggle();
             }
 
-            // Load temperature preference
             const savedTemp = localStorage.getItem('temperature');
             if (savedTemp) {
                 savedTemperature = parseFloat(savedTemp);
@@ -1607,14 +1417,12 @@
                 document.getElementById('temperatureInput').value = savedTemperature.toString();
             }
 
-            // Load thinking tokens preference
             const savedThinkingTokens = localStorage.getItem('thinking_tokens');
             if (savedThinkingTokens) {
                 currentThinkingTokens = parseInt(savedThinkingTokens);
                 document.getElementById('thinkingTokensInput').value = currentThinkingTokens;
             }
             
-            // Update show thinking toggle state on load
             updateShowThinkingToggleState();
             updateTemperatureField();
             updateThinkingTokensField();
@@ -1623,19 +1431,6 @@
             updateMaxTokensInfo();
             updateSessionTokensDisplay();
             
-            // Start observing the chat container
-            const chatContainer = document.getElementById('chatContainer');
-            resizeObserver.observe(chatContainer);
-            mutationObserver.observe(chatContainer, {
-                childList: true,
-                subtree: true,
-                characterData: true
-            });
-            
-            // Also check on window resize
-            window.addEventListener('resize', debouncedCheckWidth);
-            
-            // Focus on the message input
             document.getElementById('messageInput').focus();
         };
 
@@ -1650,7 +1445,6 @@
         }
 
         function toggleShowThinking() {
-            // Prevent toggling if thinking mode is off
             if (!thinkingMode) {
                 return;
             }
@@ -1665,13 +1459,11 @@
             const showThinkingToggle = document.getElementById('showThinkingToggle');
             
             if (!thinkingMode) {
-                // Disable and turn off Show Thinking when Thinking Mode is off
                 showThinkingContainer.classList.add('disabled');
                 showThinking = false;
                 localStorage.setItem('show_thinking', 'false');
                 showThinkingToggle.classList.remove('active');
             } else {
-                // Enable Show Thinking when Thinking Mode is on
                 showThinkingContainer.classList.remove('disabled');
             }
         }
@@ -1705,11 +1497,9 @@
 			
 			let infoText;
 			if (thinkingMode) {
-				// When thinking mode is ON, show tokens reserved for thinking
 				const availableTokens = baseMaxTokens - currentThinkingTokens;
 				infoText = `Max tokens: ${availableTokens.toLocaleString()} (${currentThinkingTokens.toLocaleString()} reserved for thinking)`;
 			} else {
-				// When thinking mode is OFF, show total available tokens
 				infoText = `Max tokens: ${baseMaxTokens.toLocaleString()}`;
 			}
 			
@@ -1717,8 +1507,7 @@
 		}
 
         function getMaxTokensForModel(modelName) {
-            const baseMaxTokens = MODEL_MAX_TOKENS[modelName] || 4096; // Default fallback
-            // When thinking mode is enabled, subtract thinking tokens from available tokens
+            const baseMaxTokens = MODEL_MAX_TOKENS[modelName] || 4096;
             return thinkingMode ? baseMaxTokens - currentThinkingTokens : baseMaxTokens;
         }
 
@@ -1744,10 +1533,7 @@
 				localStorage.setItem(STORAGE_KEY_PREFIX + 'anthropic_api_key', API_KEY);
                 alert('API key saved successfully!');
                 updateStatus(true);
-                
-                // Update the greeting message after API key is saved
                 setInitialGreeting();
-                
                 testConnection();
             } else {
                 alert('Please enter a valid API key');
@@ -1770,7 +1556,7 @@
                         'Content-Type': 'application/json',
                         'x-api-key': API_KEY,
                         'anthropic-version': '2023-06-01',
-                        'anthropic-dangerous-direct-browser-access': 'true' // Required for browser access
+                        'anthropic-dangerous-direct-browser-access': 'true'
                     },
                     body: JSON.stringify({
                         model: 'claude-sonnet-4-5-20250929',
@@ -1791,7 +1577,6 @@
                 updateDebugInfo(`Network error: ${error.message}. Note: Direct browser access to Anthropic API may be blocked by CORS.`);
                 updateStatus(false);
                 
-                // Provide helpful error message
                 if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
                     alert(`CORS Issue Detected!\n\nDirect browser access to Anthropic's API is blocked by CORS policy.\n\nSolutions:\n1. Use a backend proxy server\n2. Run Chrome with disabled security (development only):\n   --disable-web-security --user-data-dir=/tmp/chrome\n3. Use a CORS proxy service\n4. Create a local Node.js server to handle API calls`);
                 }
@@ -1799,7 +1584,6 @@
         }
 
         function handleKeyDown(event) {
-            // Send message on Enter, but allow Shift+Enter for new lines
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
                 sendMessage();
@@ -1809,10 +1593,7 @@
         function clearChat() {
             conversationHistory = [];
             resetSessionTokens();
-            // Use the function to set the appropriate greeting
             setInitialGreeting();
-            // Reset container width after clearing
-            checkAndAdjustContainerWidth();
         }
 
         async function sendMessage() {
@@ -1826,31 +1607,24 @@
             
             if (!message) return;
 
-            // Store the message for potential cancellation
             currentUserMessage = message;
 
-            // Add user message to chat (display as-is)
             await addMessageToChat('user', message);
             
-            // Add to conversation history (plain message without any modification)
             conversationHistory.push({
                 role: 'user',
                 content: message
             });
 
-            // Clear input and reset height
             messageInput.value = '';
             messageInput.style.height = '44px';
             
-            // Disable send button and show cancel button
             const sendButton = document.getElementById('sendButton');
             sendButton.disabled = true;
             toggleCancelButton(true);
             
-            // Show loading indicator
             currentLoadingId = showLoading();
 
-            // Create abort controller for cancellation
             currentAbortController = new AbortController();
 
             try {
@@ -1860,7 +1634,6 @@
                 const modeInfo = thinkingMode ? ` (thinking mode ON with ${currentThinkingTokens.toLocaleString()} thinking tokens)` : '';
                 updateDebugInfo(`Sending request to model: ${selectedModel} with max_tokens: ${maxTokens}, temperature: ${currentTemperature}${modeInfo}`);
                 
-                // Build request body
                 const requestBody = {
                     model: selectedModel,
                     max_tokens: maxTokens,
@@ -1869,7 +1642,6 @@
                     system: "You are a helpful AI assistant."
                 };
 
-                // Add thinking parameter when thinking mode is enabled
                 if (thinkingMode) {
                     requestBody.thinking = {
                         type: "enabled",
@@ -1889,7 +1661,6 @@
                     signal: currentAbortController.signal
                 });
 
-                // Remove loading indicator
                 removeLoading(currentLoadingId);
                 currentLoadingId = null;
 
@@ -1906,11 +1677,9 @@
 
                 const data = await response.json();
                 
-                // Extract text content from response
                 let assistantMessage = '';
                 let thinkingContent = '';
                 
-                // Handle content blocks (may include thinking blocks)
                 if (data.content && Array.isArray(data.content)) {
                     for (const block of data.content) {
                         if (block.type === 'thinking') {
@@ -1921,7 +1690,6 @@
                     }
                 }
                 
-                // Update token counts from API response
                 if (data.usage) {
                     sessionTokens.input += data.usage.input_tokens || 0;
                     sessionTokens.output += data.usage.output_tokens || 0;
@@ -1929,23 +1697,18 @@
                     updateSessionTokensDisplay();
                 }
                 
-                // Add assistant response to chat with markdown rendering
                 await addMessageToChat('assistant', assistantMessage, thinkingContent);
                 
-                // Add to conversation history (store the full message)
                 conversationHistory.push({
                     role: 'assistant',
                     content: assistantMessage
                 });
 
-                // Update delete buttons after adding new message
                 updateDeleteButtons();
-
                 updateDebugInfo('Message sent successfully');
 
             } catch (error) {
                 if (error.name === 'AbortError') {
-                    // Request was cancelled, don't show error
                     updateDebugInfo('Request cancelled by user');
                 } else {
                     removeLoading(currentLoadingId);
@@ -1954,18 +1717,15 @@
                     updateDebugInfo(`Error: ${error.message}`);
                     console.error('Error:', error);
                     
-                    // Provide specific help for common errors
                     if (error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
                         showError('CORS blocking detected. See console for solutions.');
                     }
                 }
             } finally {
-                // Reset state
                 currentAbortController = null;
                 currentUserMessage = '';
                 currentLoadingId = null;
                 
-                // Re-enable send button and hide cancel button
                 sendButton.disabled = false;
                 toggleCancelButton(false);
                 messageInput.focus();
@@ -1973,17 +1733,13 @@
         }
 
         function processThinkingContent(content) {
-            // This function is kept for backward compatibility with saved chats
-            // that might have thinking tags in the content
             const thinkingRegex = /<thinking>([\s\S]*?)<\/thinking>/g;
             let thinkingContent = '';
             let displayContent = content;
             
             const matches = [...content.matchAll(thinkingRegex)];
             if (matches.length > 0) {
-                // Extract all thinking blocks
                 thinkingContent = matches.map(match => match[1].trim()).join('\n\n');
-                // Remove thinking blocks from display content
                 displayContent = content.replace(thinkingRegex, '').trim();
             }
             
@@ -2009,7 +1765,6 @@
             
             if (role === 'assistant') {
                 try {
-                    // Add thinking content if present and showThinking is enabled
                     if (thinkingContent && showThinking) {
                         const thinkingDiv = document.createElement('details');
                         thinkingDiv.className = 'thinking-content';
@@ -2020,13 +1775,11 @@
                         contentDiv.appendChild(thinkingDiv);
                     }
                     
-                    // Parse and render markdown for assistant messages
                     const renderedContent = renderMarkdownWithCodeBlocks(content);
                     const mainContentDiv = document.createElement('div');
                     mainContentDiv.innerHTML = renderedContent;
                     contentDiv.appendChild(mainContentDiv);
                     
-					// Wait for code blocks to be processed
 					await new Promise(resolve => {
 						setTimeout(() => {
 							addCopyButtonsToCodeBlocks(contentDiv);
@@ -2034,16 +1787,11 @@
 						}, 150);
 					});
 
-					// Check width after a brief delay to ensure DOM is updated
-					setTimeout(checkAndAdjustContainerWidth, 50);					
-
                 } catch (e) {
                     console.error('Error rendering markdown:', e);
-                    // Fallback to plain text
                     contentDiv.textContent = content;
                 }
             } else {
-                // For user messages, just escape HTML and preserve newlines
                 contentDiv.textContent = content;
             }
             
@@ -2052,13 +1800,9 @@
             
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-            
-            // Check if width adjustment is needed
-            setTimeout(checkAndAdjustContainerWidth, 50);
         }
 
 		function renderMarkdownWithCodeBlocks(content) {
-			// Use a more robust approach to extract code blocks
 			const codeBlocks = [];
 			let processedContent = '';
 			let lastIndex = 0;
@@ -2066,27 +1810,21 @@
 			let codeBlockStart = -1;
 			let currentLang = '';
 			
-			// Split by lines to process more carefully
 			const lines = content.split('\n');
 			let i = 0;
 			
 			while (i < lines.length) {
 				const line = lines[i];
 				
-				// Check for code block delimiter
 				if (line.trim().startsWith('```')) {
 					if (!inCodeBlock) {
-						// Starting a code block
 						inCodeBlock = true;
 						codeBlockStart = i;
-						// Extract language (everything after ``` on the same line)
 						currentLang = line.trim().substring(3).trim();
 						i++;
 					} else {
-						// Ending a code block
 						inCodeBlock = false;
 						
-						// Extract the code content
 						const codeLines = lines.slice(codeBlockStart + 1, i);
 						const code = codeLines.join('\n');
 						
@@ -2101,7 +1839,6 @@
 						i++;
 					}
 				} else {
-					// Regular line
 					if (!inCodeBlock) {
 						processedContent += line + '\n';
 					}
@@ -2109,7 +1846,6 @@
 				}
 			}
 			
-			// If we're still in a code block at the end (malformed), treat remaining as code
 			if (inCodeBlock) {
 				const codeLines = lines.slice(codeBlockStart + 1);
 				const code = codeLines.join('\n');
@@ -2121,10 +1857,8 @@
 				processedContent += `%%%CODEBLOCK${index}%%%\n`;
 			}
 			
-			// Parse the markdown
 			let html = marked.parse(processedContent);
 			
-			// Replace placeholders with properly formatted code blocks
 			html = html.replace(/%%%CODEBLOCK(\d+)%%%/g, (match, index) => {
 				const block = codeBlocks[parseInt(index)];
 				return createCodeBlock(block.code, block.lang);
@@ -2134,7 +1868,6 @@
 		}
 
 		function createCodeBlock(code, language) {
-			// Map common language aliases
 			const languageMap = {
 				'py': 'python',
 				'js': 'javascript',
@@ -2153,14 +1886,12 @@
 			const mappedLang = languageMap[language] || language;
 			let highlightedCode;
 			
-			// Don't trim the code - preserve exact formatting
 			const codeToHighlight = code;
 			
 			try {
 				if (Prism.languages[mappedLang]) {
 					highlightedCode = Prism.highlight(codeToHighlight, Prism.languages[mappedLang], mappedLang);
 				} else {
-					// If language not supported, use plain text
 					highlightedCode = escapeHtml(codeToHighlight);
 				}
 			} catch (e) {
@@ -2177,7 +1908,6 @@
             const codeBlocks = container.querySelectorAll('.code-block-wrapper');
             
             codeBlocks.forEach(block => {
-                // Check if button already exists
                 if (block.querySelector('.copy-button')) return;
                 
                 const button = document.createElement('button');
@@ -2245,7 +1975,6 @@
             return div.innerHTML;
         }
 
-        // Add proxy server example
         console.log(`
 === IMPORTANT: CORS Information ===
 
