@@ -705,21 +705,24 @@
             align-self: flex-end;
         }
 
-        #sendButton, #cancelButton {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            padding: 12px 24px;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 500;
-            transition: background 0.3s, opacity 0.3s;
-        }
+		#sendButton, #cancelButton {
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			padding: 0;  /* Remove padding */
+			color: white;
+			border: none;
+			border-radius: 25px;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: 500;
+			transition: background 0.3s, opacity 0.3s;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
 
         #sendButton {
             background: #667eea;
@@ -837,7 +840,7 @@
         <div class="header">
             <h1>Chat with Claude AI <span class="status-indicator disconnected" id="statusIndicator"></span></h1>
             <div class="api-key-section" id="apiKeySection">
-                <input type="password" id="apiKeyInput" placeholder="Anthropic API key">
+                <input type="password" id="apiKeyInput" placeholder="Enter Anthropic API key">
                 <button onclick="saveApiKey()">Save API Key</button>
                 <button class="test-connection-button" onclick="testConnection()">Test Connection</button>
                 <div class="temperature-field">
@@ -897,12 +900,7 @@
         </div>
         
         <div class="chat-container" id="chatContainer">
-            <div class="message assistant">
-                <div class="message-avatar">C</div>
-                <div class="message-content">Hello! I'm Claude. Please enter your Anthropic API key above to start chatting.
-
-Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled properly. You might need to use a proxy server for production use, but for local testing, your browser might block direct API calls due to CORS policy.</div>
-            </div>
+            <!-- Initial message will be set by JavaScript -->
         </div>
         
         <div class="input-container">
@@ -995,6 +993,27 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             headerIds: false,
             mangle: false
         });
+
+        // Function to set initial greeting message based on API key status
+        function setInitialGreeting() {
+            const chatContainer = document.getElementById('chatContainer');
+            let greetingMessage;
+            
+            if (API_KEY) {
+                // API key is set - show default greeting
+                greetingMessage = "Hello! I'm Claude. How can I help you today?";
+            } else {
+                // No API key - show setup instructions
+                greetingMessage = "Hello! I'm Claude. Please enter your Anthropic API key above. \n\nNote: Make sure your API key starts with \"sk-ant-api\" and that CORS is handled properly. You might need to use a proxy server for production use, but for local testing, your browser might block direct API calls due to CORS policy.";
+            }
+            
+            chatContainer.innerHTML = `
+                <div class="message assistant">
+                    <div class="message-avatar">C</div>
+                    <div class="message-content">${escapeHtml(greetingMessage)}</div>
+                </div>
+            `;
+        }
 
         // Toggle Setup visibility
         function toggleSetup() {
@@ -1563,6 +1582,9 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
             
             updateSetupToggle();
             
+            // Set initial greeting based on API key status
+            setInitialGreeting();
+            
             // Load thinking mode preference
             const savedThinkingMode = localStorage.getItem('thinking_mode');
             if (savedThinkingMode === 'true') {
@@ -1722,6 +1744,10 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
 				localStorage.setItem(STORAGE_KEY_PREFIX + 'anthropic_api_key', API_KEY);
                 alert('API key saved successfully!');
                 updateStatus(true);
+                
+                // Update the greeting message after API key is saved
+                setInitialGreeting();
+                
                 testConnection();
             } else {
                 alert('Please enter a valid API key');
@@ -1783,13 +1809,8 @@ Note: Make sure your API key starts with "sk-ant-api" and that CORS is handled p
         function clearChat() {
             conversationHistory = [];
             resetSessionTokens();
-            const chatContainer = document.getElementById('chatContainer');
-            chatContainer.innerHTML = `
-                <div class="message assistant">
-                    <div class="message-avatar">C</div>
-                    <div class="message-content">Hello! I'm Claude. How can I help you today?</div>
-                </div>
-            `;
+            // Use the function to set the appropriate greeting
+            setInitialGreeting();
             // Reset container width after clearing
             checkAndAdjustContainerWidth();
         }
