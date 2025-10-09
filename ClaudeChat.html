@@ -1099,14 +1099,18 @@
 			
 			if (messages.length === 0) return;
 			
-			// Calculate scale factor accounting for padding and margins
+			// Calculate scale factor
 			const chatHeight = chatContainer.scrollHeight;
 			const minimapHeight = minimapContainer.offsetHeight;
-			const minimapPadding = 10; // 5px top + 5px bottom
-			const minimapMarginPerMessage = 3; // margin-bottom per message
-			const totalMarginSpace = minimapMarginPerMessage * (messages.length - 1); // Don't count margin after last message
-			const availableHeight = minimapHeight - minimapPadding - totalMarginSpace;
-			const scaleFactor = availableHeight / chatHeight;
+			const minimapPadding = 10; // 5px top + 5px bottom from CSS padding
+			const availableHeight = minimapHeight - minimapPadding;
+			
+			// Calculate total margin space needed
+			const minimapMarginPerMessage = 3;
+			const totalMarginSpace = minimapMarginPerMessage * (messages.length - 1);
+			
+			// Scale factor accounts for both message heights and margins
+			const scaleFactor = (availableHeight - totalMarginSpace) / chatHeight;
 			
 			// Create minimap representation of each message
 			messages.forEach((message) => {
@@ -1136,28 +1140,30 @@
 			const chatContainer = document.getElementById('chatContainer');
 			const minimapContainer = document.getElementById('minimapContainer');
 			const minimapViewport = document.getElementById('minimapViewport');
+			const messages = chatContainer.querySelectorAll('.message');
 			
 			const scrollTop = chatContainer.scrollTop;
 			const scrollHeight = chatContainer.scrollHeight;
 			const clientHeight = chatContainer.clientHeight;
 			const minimapHeight = minimapContainer.offsetHeight;
 			
-			// Account for padding
-			const minimapPadding = 10; // 5px top + 5px bottom
+			// Use the same calculations as updateMinimap
+			const minimapPadding = 10;
 			const availableHeight = minimapHeight - minimapPadding;
+			const minimapMarginPerMessage = 3;
+			const totalMarginSpace = minimapMarginPerMessage * Math.max(0, messages.length - 1);
 			
-			// Calculate the start and end positions as ratios of total content
-			const startRatio = scrollTop / scrollHeight;
-			const endRatio = (scrollTop + clientHeight) / scrollHeight;
+			// Same scale factor as messages
+			const scaleFactor = (availableHeight - totalMarginSpace) / scrollHeight;
 			
-			// Apply these ratios to the available minimap space
-			const viewportTop = (minimapPadding / 2) + (startRatio * availableHeight);
-			const viewportBottom = (minimapPadding / 2) + (endRatio * availableHeight);
-			const viewportHeight = Math.max(20, viewportBottom - viewportTop);
+			// Calculate viewport position and size using the scale factor
+			const viewportTop = (minimapPadding / 2) + (scrollTop * scaleFactor);
+			const viewportHeight = Math.max(20, clientHeight * scaleFactor);
 			
 			minimapViewport.style.top = viewportTop + 'px';
 			minimapViewport.style.height = viewportHeight + 'px';
 		}
+
 
         function handleMinimapClick(event) {
             const minimapContainer = document.getElementById('minimapContainer');
