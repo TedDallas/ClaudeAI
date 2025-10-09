@@ -908,7 +908,7 @@
                     <option value="claude-sonnet-4-5-20250929">Claude 4.5 Sonnet</option>
                     <option value="claude-opus-4-1-20250805">Claude 4.1 Opus</option>
                 </select>
-                <span class="max-tokens-info" id="maxTokensInfo">Max tokens: 64000</span>
+                <span class="max-tokens-info" id="maxTokensInfo">Max context/output tokens: (200,000, 64,000)</span>
                 <span class="session-tokens-info" id="sessionTokensInfo">Session: 0 tokens</span>
             </div>
             
@@ -1019,10 +1019,16 @@
         let currentUserMessage = '';
         let currentLoadingId = null;
 
-        // Model max tokens configuration
+        // Model max tokens configuration (for output)
         const MODEL_MAX_TOKENS = {
-            'claude-sonnet-4-5-20250929': 64000,
-            'claude-opus-4-1-20250805': 32000
+            'claude-sonnet-4-5-20250929': 64000,  // Required output limit
+            'claude-opus-4-1-20250805': 32000     // Required output limit
+        };
+
+        // Model context window configuration (total input + output capacity)
+        const MODEL_CONTEXT_WINDOWS = {
+            'claude-sonnet-4-5-20250929': 200000,
+            'claude-opus-4-1-20250805': 200000
         };
 
         // Minimap state
@@ -1732,14 +1738,15 @@
 
 		function updateMaxTokensInfo() {
 			const selectedModel = document.getElementById('modelSelect').value;
-			const baseMaxTokens = MODEL_MAX_TOKENS[selectedModel];
+			const contextWindow = MODEL_CONTEXT_WINDOWS[selectedModel];
+			const maxOutputTokens = MODEL_MAX_TOKENS[selectedModel];
 			
 			let infoText;
 			if (thinkingMode) {
-				const availableTokens = baseMaxTokens - currentThinkingTokens;
-				infoText = `Max tokens: ${availableTokens.toLocaleString()} (${currentThinkingTokens.toLocaleString()} reserved for thinking)`;
+				const availableOutputTokens = maxOutputTokens - currentThinkingTokens;
+				infoText = `Max context/output tokens: (${contextWindow.toLocaleString()}, ${availableOutputTokens.toLocaleString()} [${currentThinkingTokens.toLocaleString()} for thinking])`;
 			} else {
-				infoText = `Max tokens: ${baseMaxTokens.toLocaleString()}`;
+				infoText = `Max context/output tokens: (${contextWindow.toLocaleString()}, ${maxOutputTokens.toLocaleString()})`;
 			}
 			
 			document.getElementById('maxTokensInfo').textContent = infoText;
