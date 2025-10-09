@@ -63,7 +63,7 @@
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
             width: 100%;
             min-width: 720px;
-            max-width: 1350px;
+            max-width: 1200px;
             height: 90vh;
             display: flex;
             flex-direction: column;
@@ -1145,31 +1145,29 @@
 
 			const chatContainer = document.getElementById('chatContainer');
 			const minimapContainer = document.getElementById('minimapContainer');
+			const minimapContent = document.getElementById('minimapContent');
 			const minimapViewport = document.getElementById('minimapViewport');
-			const messages = chatContainer.querySelectorAll('.message');
 			
 			const scrollTop = chatContainer.scrollTop;
 			const scrollHeight = chatContainer.scrollHeight;
 			const clientHeight = chatContainer.clientHeight;
-			const minimapHeight = minimapContainer.offsetHeight;
 			
-			// Use the same calculations as updateMinimap
-			const minimapPadding = 10;
-			const availableHeight = minimapHeight - minimapPadding;
-			const minimapMarginPerMessage = 3;
-			const totalMarginSpace = minimapMarginPerMessage * Math.max(0, messages.length - 1);
+			// Get the actual rendered height of the minimap content
+			const minimapContentHeight = minimapContent.scrollHeight;
 			
-			// Same scale factor as messages
-			const scaleFactor = (availableHeight - totalMarginSpace) / scrollHeight;
+			// Calculate what portion of the content is scrolled
+			const scrollRatio = scrollTop / scrollHeight;
 			
-			// Calculate viewport position and size using the scale factor
-			const viewportTop = (minimapPadding / 2) + (scrollTop * scaleFactor);
-			const viewportHeight = Math.max(20, clientHeight * scaleFactor);
+			// Calculate what portion is visible
+			const visibleRatio = clientHeight / scrollHeight;
+			
+			// Apply these ratios to the minimap
+			const viewportTop = scrollRatio * minimapContentHeight;
+			const viewportHeight = Math.max(20, visibleRatio * minimapContentHeight);
 			
 			minimapViewport.style.top = viewportTop + 'px';
 			minimapViewport.style.height = viewportHeight + 'px';
 		}
-
 
         function handleMinimapClick(event) {
             const minimapContainer = document.getElementById('minimapContainer');
@@ -1177,6 +1175,7 @@
             const minimapHeight = minimapContainer.offsetHeight;
             const clickY = event.offsetY;
             
+            // Calculate corresponding scroll position
             // Calculate corresponding scroll position
             const scrollPercentage = clickY / minimapHeight;
             const scrollHeight = chatContainer.scrollHeight;
