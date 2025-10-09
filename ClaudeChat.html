@@ -435,15 +435,13 @@
             right: 0;
             padding: 5px;
             cursor: pointer;
-            transform-origin: top left;
         }
 
         .minimap-message {
-            margin-bottom: 2px;
+            margin-bottom: 3px;
             border-radius: 2px;
             opacity: 0.7;
             transition: opacity 0.2s;
-            min-height: 2px;
         }
 
         .minimap-message:hover {
@@ -1088,71 +1086,78 @@
             }
         }
 
-        function updateMinimap() {
-            if (!minimapVisible) return;
+		function updateMinimap() {
+			if (!minimapVisible) return;
 
-            const chatContainer = document.getElementById('chatContainer');
-            const minimapContent = document.getElementById('minimapContent');
-            const minimapContainer = document.getElementById('minimapContainer');
-            const messages = chatContainer.querySelectorAll(':scope > .message'); // Only direct children
-            
-            // Clear existing minimap content
-            minimapContent.innerHTML = '';
-            
-            if (messages.length === 0) return;
-            
-            // Calculate scale factor - ensure all content fits in minimap
-            const chatHeight = chatContainer.scrollHeight;
-            const minimapHeight = minimapContainer.offsetHeight;
-            const scaleFactor = minimapHeight / chatHeight;
-            
-            // Create minimap representation of each message
-            messages.forEach((message) => {
-                const minimapMessage = document.createElement('div');
-                minimapMessage.className = 'minimap-message';
-                
-                if (message.classList.contains('user')) {
-                    minimapMessage.classList.add('user');
-                } else if (message.classList.contains('assistant')) {
-                    minimapMessage.classList.add('assistant');
-                }
-                
-                // Calculate height based on actual message height scaled to minimap
-                const messageHeight = message.offsetHeight;
-                const minimapMessageHeight = Math.max(2, messageHeight * scaleFactor);
-                minimapMessage.style.height = minimapMessageHeight + 'px';
-                
-                minimapContent.appendChild(minimapMessage);
-            });
-            
-            updateMinimapViewport();
-        }
+			const chatContainer = document.getElementById('chatContainer');
+			const minimapContent = document.getElementById('minimapContent');
+			const minimapContainer = document.getElementById('minimapContainer');
+			const messages = chatContainer.querySelectorAll('.message');
+			
+			// Clear existing minimap content
+			minimapContent.innerHTML = '';
+			
+			if (messages.length === 0) return;
+			
+			// Calculate scale factor accounting for padding and margins
+			const chatHeight = chatContainer.scrollHeight;
+			const minimapHeight = minimapContainer.offsetHeight;
+			const minimapPadding = 10; // 5px top + 5px bottom
+			const minimapMarginPerMessage = 3; // margin-bottom per message
+			const totalMarginSpace = minimapMarginPerMessage * (messages.length - 1); // Don't count margin after last message
+			const availableHeight = minimapHeight - minimapPadding - totalMarginSpace;
+			const scaleFactor = availableHeight / chatHeight;
+			
+			// Create minimap representation of each message
+			messages.forEach((message) => {
+				const minimapMessage = document.createElement('div');
+				minimapMessage.className = 'minimap-message';
+				
+				if (message.classList.contains('user')) {
+					minimapMessage.classList.add('user');
+				} else if (message.classList.contains('assistant')) {
+					minimapMessage.classList.add('assistant');
+				}
+				
+				// Calculate height based on actual message height
+				const messageHeight = message.offsetHeight;
+				const minimapMessageHeight = Math.max(2, messageHeight * scaleFactor);
+				minimapMessage.style.height = minimapMessageHeight + 'px';
+				
+				minimapContent.appendChild(minimapMessage);
+			});
+			
+			updateMinimapViewport();
+		}
 
-        function updateMinimapViewport() {
-            if (!minimapVisible) return;
+		function updateMinimapViewport() {
+			if (!minimapVisible) return;
 
-            const chatContainer = document.getElementById('chatContainer');
-            const minimapContainer = document.getElementById('minimapContainer');
-            const minimapViewport = document.getElementById('minimapViewport');
-            
-            const scrollTop = chatContainer.scrollTop;
-            const scrollHeight = chatContainer.scrollHeight;
-            const clientHeight = chatContainer.clientHeight;
-            const minimapHeight = minimapContainer.offsetHeight;
-            
-            // Prevent division by zero
-            if (scrollHeight === 0) return;
-            
-            // Calculate viewport position and size
-            const scrollPercentage = scrollTop / scrollHeight;
-            const viewportHeightPercentage = clientHeight / scrollHeight;
-            
-            const viewportTop = scrollPercentage * minimapHeight;
-            const viewportHeight = viewportHeightPercentage * minimapHeight;
-            
-            minimapViewport.style.top = viewportTop + 'px';
-            minimapViewport.style.height = Math.max(10, viewportHeight) + 'px';
-        }
+			const chatContainer = document.getElementById('chatContainer');
+			const minimapContainer = document.getElementById('minimapContainer');
+			const minimapViewport = document.getElementById('minimapViewport');
+			
+			const scrollTop = chatContainer.scrollTop;
+			const scrollHeight = chatContainer.scrollHeight;
+			const clientHeight = chatContainer.clientHeight;
+			const minimapHeight = minimapContainer.offsetHeight;
+			
+			// Account for padding
+			const minimapPadding = 10; // 5px top + 5px bottom
+			const availableHeight = minimapHeight - minimapPadding;
+			
+			// Calculate the start and end positions as ratios of total content
+			const startRatio = scrollTop / scrollHeight;
+			const endRatio = (scrollTop + clientHeight) / scrollHeight;
+			
+			// Apply these ratios to the available minimap space
+			const viewportTop = (minimapPadding / 2) + (startRatio * availableHeight);
+			const viewportBottom = (minimapPadding / 2) + (endRatio * availableHeight);
+			const viewportHeight = Math.max(20, viewportBottom - viewportTop);
+			
+			minimapViewport.style.top = viewportTop + 'px';
+			minimapViewport.style.height = viewportHeight + 'px';
+		}
 
         function handleMinimapClick(event) {
             const minimapContainer = document.getElementById('minimapContainer');
