@@ -912,8 +912,17 @@
                 <span class="session-tokens-info" id="sessionTokensInfo">Session: 0 tokens</span>
             </div>
             
-            <!-- Thinking toggles moved here -->
+            <!-- Thinking toggles moved here - Setup is now FIRST -->
             <div class="thinking-toggles-container">
+                <div class="thinking-toggle">
+                    <label>
+                        <span>Setup</span>
+                        <div class="toggle-switch" id="setupToggle" onclick="toggleSetup()">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </label>
+                </div>
+
                 <div class="thinking-toggle">
                     <label>
                         <span>Thinking Mode</span>
@@ -935,15 +944,6 @@
                 <div class="thinking-indicator" id="thinkingIndicator">
                     <div class="thinking-dot"></div>
                     <span id="thinkingIndicatorText">Thinking mode enabled (4000 thinking tokens).</span>
-                </div>
-
-                <div class="thinking-toggle">
-                    <label>
-                        <span>Setup</span>
-                        <div class="toggle-switch" id="setupToggle" onclick="toggleSetup()">
-                            <div class="toggle-slider"></div>
-                        </div>
-                    </label>
                 </div>
 
                 <div class="thinking-toggle">
