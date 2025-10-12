@@ -508,7 +508,7 @@
 			color: white;
 			border: none;
 			cursor: pointer;
-			font-size: 16px;
+			font-size: 14px;
 			font-weight: bold;
 			display: inline-flex;
 			align-items: center;
@@ -1198,80 +1198,87 @@
             }
         }
 
-        function deleteLastExchange() {
-            const chatContainer = document.getElementById('chatContainer');
-            const messages = chatContainer.querySelectorAll('.message');
-            
-            if (messages.length < 2) {
-                return;
-            }
-            
-            let lastAssistantIndex = -1;
-            for (let i = messages.length - 1; i >= 0; i--) {
-                if (messages[i].classList.contains('assistant')) {
-                    lastAssistantIndex = i;
-                    break;
-                }
-            }
-            
-            if (lastAssistantIndex <= 0) {
-                return;
-            }
-            
-            let precedingUserIndex = -1;
-            for (let i = lastAssistantIndex - 1; i >= 0; i--) {
-                if (messages[i].classList.contains('user')) {
-                    precedingUserIndex = i;
-                    break;
-                }
-            }
-            
-            if (precedingUserIndex < 0) {
-                return;
-            }
-            
-            const userMessageContent = messages[precedingUserIndex].querySelector('.message-content').textContent.trim();
-            
-            messages[lastAssistantIndex].remove();
-            messages[precedingUserIndex].remove();
-            
-            if (conversationHistory.length >= 2) {
-                conversationHistory.pop();
-                conversationHistory.pop();
-            }
-            
-            const messageInput = document.getElementById('messageInput');
-            messageInput.value = userMessageContent;
-            messageInput.focus();
-            
-            autoResizeTextarea();
-            updateDeleteButtons();
-            updateDebugInfo('Last exchange deleted and message restored to input');
-        }
+		// Replace the deleteLastExchange function with this enhanced version:
+		function deleteLastExchange() {
+			const chatContainer = document.getElementById('chatContainer');
+			const messages = chatContainer.querySelectorAll('.message');
+			
+			if (messages.length < 2) {
+				return;
+			}
+			
+			let lastAssistantIndex = -1;
+			for (let i = messages.length - 1; i >= 0; i--) {
+				if (messages[i].classList.contains('assistant')) {
+					lastAssistantIndex = i;
+					break;
+				}
+			}
+			
+			if (lastAssistantIndex <= 0) {
+				return;
+			}
+			
+			let precedingUserIndex = -1;
+			for (let i = lastAssistantIndex - 1; i >= 0; i--) {
+				if (messages[i].classList.contains('user')) {
+					precedingUserIndex = i;
+					break;
+				}
+			}
+			
+			if (precedingUserIndex < 0) {
+				return;
+			}
+			
+			const userMessageContent = messages[precedingUserIndex].querySelector('.message-content').textContent.trim();
+			
+			messages[lastAssistantIndex].remove();
+			messages[precedingUserIndex].remove();
+			
+			if (conversationHistory.length >= 2) {
+				conversationHistory.pop();
+				conversationHistory.pop();
+			}
+			
+			const messageInput = document.getElementById('messageInput');
+			messageInput.value = userMessageContent;
+			messageInput.focus();
+			
+			autoResizeTextarea();
+			
+			// Immediately update delete buttons after removal
+			updateDeleteButtons();
+			
+			updateDebugInfo('Last exchange deleted and message restored to input');
+		}
 
-        function updateDeleteButtons() {
-            const chatContainer = document.getElementById('chatContainer');
-            
-            const existingButtons = chatContainer.querySelectorAll('.delete-button');
-            existingButtons.forEach(btn => btn.remove());
-            
-            const assistantMessages = chatContainer.querySelectorAll('.message.assistant');
-            
-            if (assistantMessages.length > 1) {
-                const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
-                
-                const deleteButton = document.createElement('button');
-                deleteButton.className = 'delete-button';
-                deleteButton.innerHTML = '×';
-                deleteButton.title = 'Delete this response and restore your message';
-                deleteButton.onclick = deleteLastExchange;
-                
-                const messageContent = lastAssistantMessage.querySelector('.message-content');
-                if (messageContent) {
-                    messageContent.appendChild(deleteButton);
-                }
-            }
-        }
+		// The updateDeleteButtons function remains the same but is now called after each deletion
+		function updateDeleteButtons() {
+			const chatContainer = document.getElementById('chatContainer');
+			
+			const existingButtons = chatContainer.querySelectorAll('.delete-button');
+			existingButtons.forEach(btn => btn.remove());
+			
+			const assistantMessages = chatContainer.querySelectorAll('.message.assistant');
+			
+			// Only add delete button if there's more than just the initial greeting
+			if (assistantMessages.length > 1) {
+				const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
+				
+				const deleteButton = document.createElement('button');
+				deleteButton.className = 'delete-button';
+				deleteButton.innerHTML = '×';
+				deleteButton.title = 'Delete this response and restore your message';
+				deleteButton.onclick = deleteLastExchange;
+				
+				const messageContent = lastAssistantMessage.querySelector('.message-content');
+				if (messageContent) {
+					messageContent.appendChild(deleteButton);
+				}
+			}
+		}
+
 
 		function scrollToTopOfMessage(messageElement) {
 			const messageContent = messageElement.querySelector('.message-content');
