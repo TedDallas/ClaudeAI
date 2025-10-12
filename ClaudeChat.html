@@ -55,6 +55,12 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            transition: background 0.3s ease;
+        }
+
+        /* Dark mode styles */
+        body.dark-mode {
+            background: linear-gradient(to right, #0f1419 0%, #1a1a2e 100%);
         }
 
         .container {
@@ -68,6 +74,12 @@
             display: flex;
             flex-direction: column;
             position: relative;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        body.dark-mode .container {
+            background: #1e1e1e;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
         }
 
         .header {
@@ -75,12 +87,23 @@
             border-bottom: 1px solid #e0e0e0;
             background: #f8f9fa;
             border-radius: 10px 10px 0 0;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark-mode .header {
+            background: #252525;
+            border-bottom-color: #404040;
         }
 
         .header h1 {
             font-size: 24px;
             color: #333;
             margin-bottom: 10px;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .header h1 {
+            color: #e0e0e0;
         }
 
         .model-selector {
@@ -93,6 +116,11 @@
         .model-selector label {
             font-weight: 500;
             color: #555;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .model-selector label {
+            color: #b0b0b0;
         }
 
         .model-selector select {
@@ -101,6 +129,15 @@
             border-radius: 5px;
             font-size: 14px;
             cursor: pointer;
+            background: white;
+            color: #333;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .model-selector select {
+            background: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
         }
 
         /* Thinking mode toggle styles */
@@ -111,7 +148,11 @@
             padding: 0 10px;
             background: #f0f0f0;
             border-radius: 5px;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, background 0.3s ease;
+        }
+
+        body.dark-mode .thinking-toggle {
+            background: #2d2d2d;
         }
 
         .thinking-toggle.disabled {
@@ -125,6 +166,12 @@
             gap: 8px;
             cursor: pointer;
             user-select: none;
+            color: #333;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .thinking-toggle label {
+            color: #e0e0e0;
         }
 
         .thinking-toggle.disabled label {
@@ -141,12 +188,20 @@
             cursor: pointer;
         }
 
+        body.dark-mode .toggle-switch {
+            background: #555;
+        }
+
         .thinking-toggle.disabled .toggle-switch {
             cursor: not-allowed;
         }
 
         .toggle-switch.active {
             background: #667eea;
+        }
+
+        body.dark-mode .toggle-switch.active {
+            background: #7c8ef0;
         }
 
         .toggle-slider {
@@ -183,6 +238,13 @@
             font-size: 12px;
             align-items: center;
             gap: 8px;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .thinking-indicator {
+            background: #1a3a52;
+            border-color: #2b5a7f;
+            color: #6eb4f0;
         }
 
         .thinking-indicator.active {
@@ -195,6 +257,10 @@
             background: #1976d2;
             border-radius: 50%;
             animation: pulse 1.5s infinite;
+        }
+
+        body.dark-mode .thinking-indicator .thinking-dot {
+            background: #6eb4f0;
         }
 
         @keyframes pulse {
@@ -219,6 +285,13 @@
             white-space: pre-wrap;
             max-height: 200px;
             overflow-y: auto;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .thinking-content {
+            background: #2a2a2a;
+            border-left-color: #2b5a7f;
+            color: #b0b0b0;
         }
 
         .thinking-content summary {
@@ -227,6 +300,11 @@
             font-weight: 600;
             color: #1976d2;
             margin-bottom: 8px;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .thinking-content summary {
+            color: #6eb4f0;
         }
 
         .api-key-section {
@@ -246,6 +324,15 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 14px;
+            background: white;
+            color: #333;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .api-key-section input {
+            background: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
         }
 
         .api-key-section input[type="password"] {
@@ -260,6 +347,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            transition: background 0.3s ease;
         }
 
         .api-key-section button:hover {
@@ -286,6 +374,12 @@
             font-size: 14px;
             color: #555;
             font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .temperature-field label,
+        body.dark-mode .thinking-tokens-field label {
+            color: #b0b0b0;
         }
 
 		.temperature-field input {
@@ -295,7 +389,16 @@
 			border-radius: 5px;
 			font-size: 14px;
 			text-align: center;
+            background: white;
+            color: #333;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 		}
+
+        body.dark-mode .temperature-field input {
+            background: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
+        }
 
 		.thinking-tokens-field input {
 			width: 105px;
@@ -304,12 +407,27 @@
 			border-radius: 5px;
 			font-size: 14px;
 			text-align: center;
+            background: white;
+            color: #333;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 		}
+
+        body.dark-mode .thinking-tokens-field input {
+            background: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
+        }
 		
         .temperature-field input:disabled, .thinking-tokens-field input:disabled {
             background-color: #f5f5f5;
             color: #999;
             cursor: not-allowed;
+        }
+
+        body.dark-mode .temperature-field input:disabled,
+        body.dark-mode .thinking-tokens-field input:disabled {
+            background-color: #1a1a1a;
+            color: #666;
         }
 
         /* Thinking tokens field specific styling */
@@ -327,8 +445,17 @@
             cursor: not-allowed;
         }
 
+        body.dark-mode .thinking-tokens-field.disabled input {
+            background-color: #1a1a1a;
+            color: #666;
+        }
+
         .thinking-tokens-field.disabled label {
             color: #999;
+        }
+
+        body.dark-mode .thinking-tokens-field.disabled label {
+            color: #666;
         }
 
         /* Right-side buttons positioning */
@@ -349,6 +476,7 @@
             cursor: pointer;
             font-size: 14px;
             white-space: nowrap;
+            transition: background 0.3s ease;
         }
 
         .clear-button {
@@ -403,6 +531,12 @@
             flex-direction: column;
             gap: 15px;
             position: relative;
+            background: white;
+            transition: background 0.3s ease;
+        }
+
+        body.dark-mode .chat-container {
+            background: #1e1e1e;
         }
 
         .message {
@@ -443,6 +577,7 @@
             width: fit-content;
             max-width: 100%;
             position: relative;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         .message.user .message-content {
@@ -451,9 +586,18 @@
             white-space: pre-wrap;
         }
 
+        body.dark-mode .message.user .message-content {
+            background: #5568d3;
+        }
+
         .message.assistant .message-content {
             background: #f1f3f5;
             color: #333;
+        }
+
+        body.dark-mode .message.assistant .message-content {
+            background: #2a2a2a;
+            color: #e0e0e0;
         }
 
 		/* Delete button styles */
@@ -563,6 +707,7 @@
             margin-top: 16px;
             margin-bottom: 8px;
             font-weight: 600;
+            transition: color 0.3s ease;
         }
 
         .message.assistant .message-content h1 { font-size: 1.5em; }
@@ -589,6 +734,12 @@
             margin: 8px 0;
             color: #666;
             font-style: italic;
+            transition: border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .message.assistant .message-content blockquote {
+            border-left-color: #7c8ef0;
+            color: #999;
         }
 
         .message.assistant .message-content code {
@@ -619,7 +770,7 @@
             font-size: 12px;
             z-index: 10;
             opacity: 0.8;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, background 0.3s ease;
         }
 
         .copy-button:hover {
@@ -644,6 +795,12 @@
             padding: 8px;
             text-align: left;
             white-space: nowrap;
+            transition: border-color 0.3s ease, background 0.3s ease;
+        }
+
+        body.dark-mode .message.assistant .message-content th,
+        body.dark-mode .message.assistant .message-content td {
+            border-color: #404040;
         }
 
         .message.assistant .message-content th {
@@ -651,9 +808,18 @@
             font-weight: 600;
         }
 
+        body.dark-mode .message.assistant .message-content th {
+            background: #333;
+        }
+
         .message.assistant .message-content a {
             color: #667eea;
             text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .message.assistant .message-content a {
+            color: #7c8ef0;
         }
 
         .message.assistant .message-content a:hover {
@@ -664,6 +830,11 @@
             margin: 16px 0;
             border: none;
             border-top: 1px solid #e0e0e0;
+            transition: border-color 0.3s ease;
+        }
+
+        body.dark-mode .message.assistant .message-content hr {
+            border-top-color: #404040;
         }
 
         .message-avatar {
@@ -676,6 +847,7 @@
             font-weight: bold;
             font-size: 14px;
             flex-shrink: 0;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         .message.user .message-avatar {
@@ -683,9 +855,18 @@
             color: white;
         }
 
+        body.dark-mode .message.user .message-avatar {
+            background: #5a3780;
+        }
+
         .message.assistant .message-avatar {
             background: #e9ecef;
             color: #667eea;
+        }
+
+        body.dark-mode .message.assistant .message-avatar {
+            background: #2d2d2d;
+            color: #7c8ef0;
         }
 
         .input-container {
@@ -693,6 +874,12 @@
             border-top: 1px solid #e0e0e0;
             background: #f8f9fa;
             border-radius: 0 0 10px 10px;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark-mode .input-container {
+            background: #252525;
+            border-top-color: #404040;
         }
 
         .input-wrapper {
@@ -715,10 +902,23 @@
             max-height: 200px;
             overflow-y: auto;
             line-height: 1.5;
+            background: white;
+            color: #333;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode #messageInput {
+            background: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
         }
 
         #messageInput:focus {
             border-color: #667eea;
+        }
+
+        body.dark-mode #messageInput:focus {
+            border-color: #7c8ef0;
         }
 
         /* Button container for Send/Cancel */
@@ -762,6 +962,10 @@
             cursor: not-allowed;
         }
 
+        body.dark-mode #sendButton:disabled {
+            background: #555;
+        }
+
         #sendButton.hidden {
             opacity: 0;
             pointer-events: none;
@@ -796,6 +1000,10 @@
             animation: bounce 1.4s infinite ease-in-out both;
         }
 
+        body.dark-mode .loading-dot {
+            background: #7c8ef0;
+        }
+
         .loading-dot:nth-child(1) {
             animation-delay: -0.32s;
         }
@@ -820,6 +1028,13 @@
             border-radius: 10px;
             margin: 10px 0;
             border: 1px solid #fcc;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .error-message {
+            background: #3d1a1a;
+            color: #ff6b6b;
+            border-color: #5a2a2a;
         }
 
         .debug-info {
@@ -827,6 +1042,11 @@
             color: #999;
             margin-top: 5px;
             font-family: monospace;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .debug-info {
+            color: #777;
         }
 
         .max-tokens-info {
@@ -834,6 +1054,11 @@
             color: #666;
             margin-left: 10px;
             font-style: italic;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .max-tokens-info {
+            color: #999;
         }
 
         .session-tokens-info {
@@ -844,6 +1069,12 @@
             padding: 4px 8px;
             background: #e8eaf6;
             border-radius: 4px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .session-tokens-info {
+            background: #2a2d4a;
+            color: #7c8ef0;
         }
 
         /* Hidden file input */
@@ -915,6 +1146,15 @@
                     </label>
                 </div>
 
+                <div class="thinking-toggle">
+                    <label>
+                        <span>Dark Mode</span>
+                        <div class="toggle-switch" id="darkModeToggle" onclick="toggleDarkMode()">
+                            <div class="toggle-slider"></div>
+                        </div>
+                    </label>
+                </div>
+
                 <div class="thinking-indicator" id="thinkingIndicator">
                     <div class="thinking-dot"></div>
                     <span id="thinkingIndicatorText">Thinking mode enabled (4000 thinking tokens).</span>
@@ -962,6 +1202,7 @@
         let thinkingMode = false;
         let showThinking = false;
         let setupVisible = false;
+        let darkMode = false;
 
         // Temperature state
         let currentTemperature = 0.7;
@@ -1025,6 +1266,31 @@
             headerIds: false,
             mangle: false
         });
+
+        function toggleDarkMode() {
+            darkMode = !darkMode;
+            localStorage.setItem('dark_mode', darkMode.toString());
+            updateDarkModeToggle();
+            applyDarkMode();
+        }
+
+        function updateDarkModeToggle() {
+            const toggle = document.getElementById('darkModeToggle');
+            
+            if (darkMode) {
+                toggle.classList.add('active');
+            } else {
+                toggle.classList.remove('active');
+            }
+        }
+
+        function applyDarkMode() {
+            if (darkMode) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+        }
 
         function setInitialGreeting() {
             const chatContainer = document.getElementById('chatContainer');
@@ -1497,6 +1763,13 @@
             if (savedShowThinking === 'true') {
                 showThinking = true;
                 updateShowThinkingToggle();
+            }
+
+            const savedDarkMode = localStorage.getItem('dark_mode');
+            if (savedDarkMode === 'true') {
+                darkMode = true;
+                updateDarkModeToggle();
+                applyDarkMode();
             }
 
             const savedTemp = localStorage.getItem('temperature');
