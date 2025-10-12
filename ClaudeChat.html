@@ -394,14 +394,6 @@
             background: #f44336;
         }
 
-        /* Chat container wrapper for minimap */
-        .chat-wrapper {
-            flex: 1;
-            display: flex;
-            position: relative;
-            overflow: hidden;
-        }
-
         .chat-container {
             flex: 1;
             overflow-y: auto;
@@ -411,62 +403,6 @@
             flex-direction: column;
             gap: 15px;
             position: relative;
-        }
-
-        /* Minimap styles */
-        .minimap-container {
-            width: 120px;
-            background: #f8f9fa;
-            border-left: 1px solid #e0e0e0;
-            position: relative;
-            overflow: hidden;
-            flex-shrink: 0;
-            display: none;
-        }
-
-        .minimap-container.visible {
-            display: block;
-        }
-
-        .minimap-content {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 5px;
-            cursor: pointer;
-        }
-
-        .minimap-message {
-            margin-bottom: 3px;
-            border-radius: 2px;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-
-        .minimap-message:hover {
-            opacity: 1;
-        }
-
-        .minimap-message.user {
-            background: #667eea;
-            margin-left: auto;
-            width: 70%;
-        }
-
-        .minimap-message.assistant {
-            background: #d0d0d0;
-            width: 85%;
-        }
-
-        .minimap-viewport {
-            position: absolute;
-            left: 0;
-            right: 0;
-            background: rgba(102, 126, 234, 0.2);
-            border: 1px solid rgba(102, 126, 234, 0.5);
-            pointer-events: none;
-            transition: top 0.1s, height 0.1s;
         }
 
         .message {
@@ -556,6 +492,44 @@
 		.delete-button:hover {
 			opacity: 1 !important;
 			background: #c82333;
+		}
+
+		/* Scroll to top button styles */
+		.scroll-to-top-button {
+			position: absolute;
+			bottom: 8px;
+			right: 8px;
+			width: 28px;
+			height: 28px;
+			min-width: 28px;
+			min-height: 28px;
+			border-radius: 50%;
+			background: #667eea;
+			color: white;
+			border: none;
+			cursor: pointer;
+			font-size: 16px;
+			font-weight: bold;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			text-align: center;
+			line-height: 0;
+			opacity: 0;
+			transition: opacity 0.2s, background 0.2s;
+			z-index: 1000;
+			padding: 0;
+			overflow: hidden;
+			pointer-events: auto;
+		}
+
+		.message:hover .scroll-to-top-button {
+			opacity: 0.7;
+		}
+
+		.scroll-to-top-button:hover {
+			opacity: 1 !important;
+			background: #5568d3;
 		}
 
         /* Ensure code blocks and pre elements can expand properly */
@@ -912,7 +886,7 @@
                 <span class="session-tokens-info" id="sessionTokensInfo">Session: 0 tokens</span>
             </div>
             
-            <!-- Thinking toggles moved here - Setup is now FIRST -->
+            <!-- Thinking toggles -->
             <div class="thinking-toggles-container">
                 <div class="thinking-toggle">
                     <label>
@@ -945,29 +919,12 @@
                     <div class="thinking-dot"></div>
                     <span id="thinkingIndicatorText">Thinking mode enabled (4000 thinking tokens).</span>
                 </div>
-
-                <div class="thinking-toggle">
-                    <label>
-                        <span>Minimap</span>
-                        <div class="toggle-switch" id="minimapToggle" onclick="toggleMinimap()">
-                            <div class="toggle-slider"></div>
-                        </div>
-                    </label>
-                </div>
             </div>
             <div class="debug-info" id="debugInfo"></div>
         </div>
         
-        <div class="chat-wrapper">
-            <div class="chat-container" id="chatContainer">
-                <!-- Initial message will be set by JavaScript -->
-            </div>
-            
-            <!-- Minimap -->
-            <div class="minimap-container" id="minimapContainer">
-                <div class="minimap-content" id="minimapContent"></div>
-                <div class="minimap-viewport" id="minimapViewport"></div>
-            </div>
+        <div class="chat-container" id="chatContainer">
+            <!-- Initial message will be set by JavaScript -->
         </div>
         
         <div class="input-container">
@@ -1005,7 +962,6 @@
         let thinkingMode = false;
         let showThinking = false;
         let setupVisible = false;
-        let minimapVisible = false;
 
         // Temperature state
         let currentTemperature = 0.7;
@@ -1031,8 +987,8 @@
             'claude-opus-4-1-20250805': 200000
         };
 
-        // Minimap state
-        let minimapScrollTimeout = null;
+        // Minimum height threshold for showing scroll-to-top button (in pixels)
+        const SCROLL_BUTTON_HEIGHT_THRESHOLD = 400;
 
         // Configure marked options
         marked.setOptions({
@@ -1070,145 +1026,6 @@
             mangle: false
         });
 
-        // Minimap functions
-        function toggleMinimap() {
-            minimapVisible = !minimapVisible;
-            localStorage.setItem('minimap_visible', minimapVisible.toString());
-            updateMinimapToggle();
-            updateMinimap();
-        }
-
-        function updateMinimapToggle() {
-            const toggle = document.getElementById('minimapToggle');
-            const container = document.getElementById('minimapContainer');
-            
-            if (minimapVisible) {
-                toggle.classList.add('active');
-                container.classList.add('visible');
-                updateMinimap();
-            } else {
-                toggle.classList.remove('active');
-                container.classList.remove('visible');
-            }
-        }
-
-		function updateMinimap() {
-			if (!minimapVisible) return;
-
-			const chatContainer = document.getElementById('chatContainer');
-			const minimapContent = document.getElementById('minimapContent');
-			const minimapContainer = document.getElementById('minimapContainer');
-			const messages = chatContainer.querySelectorAll('.message');
-			
-			// Clear existing minimap content
-			minimapContent.innerHTML = '';
-			
-			if (messages.length === 0) return;
-			
-			// Calculate scale factor
-			const chatHeight = chatContainer.scrollHeight;
-			const minimapHeight = minimapContainer.offsetHeight;
-			const minimapPadding = 10; // 5px top + 5px bottom from CSS padding
-			const availableHeight = minimapHeight - minimapPadding;
-			
-			// Calculate total margin space needed
-			const minimapMarginPerMessage = 3;
-			const totalMarginSpace = minimapMarginPerMessage * (messages.length - 1);
-			
-			// Scale factor accounts for both message heights and margins
-			const scaleFactor = (availableHeight - totalMarginSpace) / chatHeight;
-			
-			// Create minimap representation of each message
-			messages.forEach((message) => {
-				const minimapMessage = document.createElement('div');
-				minimapMessage.className = 'minimap-message';
-				
-				if (message.classList.contains('user')) {
-					minimapMessage.classList.add('user');
-				} else if (message.classList.contains('assistant')) {
-					minimapMessage.classList.add('assistant');
-				}
-				
-				// Calculate height based on actual message height
-				const messageHeight = message.offsetHeight;
-				const minimapMessageHeight = Math.max(2, messageHeight * scaleFactor);
-				minimapMessage.style.height = minimapMessageHeight + 'px';
-				
-				minimapContent.appendChild(minimapMessage);
-			});
-			
-			updateMinimapViewport();
-		}
-
-		function updateMinimapViewport() {
-			if (!minimapVisible) return;
-
-			const chatContainer = document.getElementById('chatContainer');
-			const minimapContainer = document.getElementById('minimapContainer');
-			const minimapContent = document.getElementById('minimapContent');
-			const minimapViewport = document.getElementById('minimapViewport');
-			
-			const scrollTop = chatContainer.scrollTop;
-			const scrollHeight = chatContainer.scrollHeight;
-			const clientHeight = chatContainer.clientHeight;
-			
-			// Get the actual rendered height of the minimap content
-			const minimapContentHeight = minimapContent.scrollHeight;
-			
-			// Calculate what portion of the content is scrolled
-			const scrollRatio = scrollTop / scrollHeight;
-			
-			// Calculate what portion is visible
-			const visibleRatio = clientHeight / scrollHeight;
-			
-			// Apply these ratios to the minimap
-			const viewportTop = scrollRatio * minimapContentHeight;
-			const viewportHeight = Math.max(20, visibleRatio * minimapContentHeight);
-			
-			minimapViewport.style.top = viewportTop + 'px';
-			minimapViewport.style.height = viewportHeight + 'px';
-		}
-
-        function handleMinimapClick(event) {
-            const minimapContainer = document.getElementById('minimapContainer');
-            const chatContainer = document.getElementById('chatContainer');
-            const minimapHeight = minimapContainer.offsetHeight;
-            const clickY = event.offsetY;
-            
-            // Calculate corresponding scroll position
-            // Calculate corresponding scroll position
-            const scrollPercentage = clickY / minimapHeight;
-            const scrollHeight = chatContainer.scrollHeight;
-            const targetScroll = scrollPercentage * scrollHeight;
-            
-            chatContainer.scrollTop = targetScroll;
-        }
-
-        function initializeMinimap() {
-            const minimapContent = document.getElementById('minimapContent');
-            const chatContainer = document.getElementById('chatContainer');
-            
-            // Handle minimap clicks
-            minimapContent.addEventListener('click', handleMinimapClick);
-            
-            // Update viewport on scroll
-            chatContainer.addEventListener('scroll', () => {
-                if (minimapScrollTimeout) {
-                    clearTimeout(minimapScrollTimeout);
-                }
-                minimapScrollTimeout = setTimeout(() => {
-                    updateMinimapViewport();
-                }, 50);
-            });
-            
-            // Update minimap on window resize
-            window.addEventListener('resize', () => {
-                if (minimapVisible) {
-                    updateMinimap();
-                }
-            });
-        }
-
         function setInitialGreeting() {
             const chatContainer = document.getElementById('chatContainer');
             let greetingMessage;
@@ -1225,8 +1042,6 @@
                     <div class="message-content">${escapeHtml(greetingMessage)}</div>
                 </div>
             `;
-            
-            updateMinimap();
         }
 
         function toggleSetup() {
@@ -1367,8 +1182,6 @@
                 
                 updateDebugInfo('Request cancelled');
                 messageInput.focus();
-                
-                updateMinimap();
             }
         }
 
@@ -1434,7 +1247,6 @@
             autoResizeTextarea();
             updateDeleteButtons();
             updateDebugInfo('Last exchange deleted and message restored to input');
-            updateMinimap();
         }
 
         function updateDeleteButtons() {
@@ -1460,6 +1272,40 @@
                 }
             }
         }
+
+		function scrollToTopOfMessage(messageElement) {
+			const messageContent = messageElement.querySelector('.message-content');
+			if (messageContent) {
+				messageContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}
+		}
+
+		function addScrollToTopButtons() {
+			const chatContainer = document.getElementById('chatContainer');
+			
+			// Remove existing scroll-to-top buttons
+			const existingScrollButtons = chatContainer.querySelectorAll('.scroll-to-top-button');
+			existingScrollButtons.forEach(btn => btn.remove());
+			
+			// Get all messages (both user and assistant)
+			const allMessages = chatContainer.querySelectorAll('.message');
+			
+			allMessages.forEach(messageDiv => {
+				const messageContent = messageDiv.querySelector('.message-content');
+				if (messageContent && messageContent.offsetHeight > SCROLL_BUTTON_HEIGHT_THRESHOLD) {
+					const scrollButton = document.createElement('button');
+					scrollButton.className = 'scroll-to-top-button';
+					scrollButton.innerHTML = '↑';
+					scrollButton.title = 'Scroll to top of message';
+					scrollButton.onclick = function(e) {
+						e.stopPropagation();
+						scrollToTopOfMessage(messageDiv);
+					};
+					
+					messageContent.appendChild(scrollButton);
+				}
+			});
+		}
 
         function saveChat() {
             if (conversationHistory.length === 0) {
@@ -1580,7 +1426,7 @@
 			
 			await new Promise(resolve => setTimeout(resolve, 300));
 			updateDeleteButtons();
-			updateMinimap();
+			addScrollToTopButtons();
 			chatContainer.scrollTop = chatContainer.scrollHeight;
 		}
 
@@ -1599,8 +1445,6 @@
 
             const thinkingTokensInput = document.getElementById('thinkingTokensInput');
             thinkingTokensInput.addEventListener('input', onThinkingTokensChange);
-            
-            initializeMinimap();
         });
 
         function updateSessionTokensDisplay() {
@@ -1633,13 +1477,7 @@
                 setupVisible = savedSetupVisible === 'true';
             }
             
-            const savedMinimapVisible = localStorage.getItem('minimap_visible');
-            if (savedMinimapVisible === 'true') {
-                minimapVisible = true;
-            }
-            
             updateSetupToggle();
-            updateMinimapToggle();
             setInitialGreeting();
             
             const savedThinkingMode = localStorage.getItem('thinking_mode');
@@ -1950,6 +1788,7 @@
                 });
 
                 updateDeleteButtons();
+				addScrollToTopButtons();
                 updateDebugInfo('Message sent successfully');
 
             } catch (error) {
@@ -2045,9 +1884,6 @@
             
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-            
-            // Update minimap after adding message
-            updateMinimap();
         }
 
 		function renderMarkdownWithCodeBlocks(content) {
@@ -2198,7 +2034,6 @@
             `;
             chatContainer.appendChild(loadingDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-            updateMinimap();
             return loadingId;
         }
 
@@ -2206,7 +2041,6 @@
             const loadingDiv = document.getElementById(loadingId);
             if (loadingDiv) {
                 loadingDiv.remove();
-                updateMinimap();
             }
         }
 
@@ -2217,7 +2051,6 @@
             errorDiv.innerHTML = `<strong>Error:</strong> ${escapeHtml(message)}`;
             chatContainer.appendChild(errorDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-            updateMinimap();
         }
 
         function escapeHtml(text) {
