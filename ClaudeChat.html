@@ -55,7 +55,13 @@
             justify-content: center;
             align-items: center;
             padding: 20px;
+            transition: background 0.3s ease;
         }
+
+        /* Dark mode styles */
+		body.dark-mode {
+			background: linear-gradient(to right, #0a1628 0%, #0d1f1a 100%);
+		}
 
         .container {
             background: white;
@@ -68,6 +74,12 @@
             display: flex;
             flex-direction: column;
             position: relative;
+            transition: background 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        body.dark-mode .container {
+            background: #1e1e1e;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6);
         }
 
         .header {
@@ -75,12 +87,23 @@
             border-bottom: 1px solid #e0e0e0;
             background: #f8f9fa;
             border-radius: 10px 10px 0 0;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark-mode .header {
+            background: #252525;
+            border-bottom-color: #404040;
         }
 
         .header h1 {
             font-size: 24px;
             color: #333;
             margin-bottom: 10px;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .header h1 {
+            color: #e0e0e0;
         }
 
         .model-selector {
@@ -93,6 +116,11 @@
         .model-selector label {
             font-weight: 500;
             color: #555;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .model-selector label {
+            color: #b0b0b0;
         }
 
         .model-selector select {
@@ -101,6 +129,15 @@
             border-radius: 5px;
             font-size: 14px;
             cursor: pointer;
+            background: white;
+            color: #333;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .model-selector select {
+            background: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
         }
 
         /* Thinking mode toggle styles */
@@ -111,7 +148,11 @@
             padding: 0 10px;
             background: #f0f0f0;
             border-radius: 5px;
-            transition: opacity 0.3s;
+            transition: opacity 0.3s, background 0.3s ease;
+        }
+
+        body.dark-mode .thinking-toggle {
+            background: #2d2d2d;
         }
 
         .thinking-toggle.disabled {
@@ -125,6 +166,12 @@
             gap: 8px;
             cursor: pointer;
             user-select: none;
+            color: #333;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .thinking-toggle label {
+            color: #e0e0e0;
         }
 
         .thinking-toggle.disabled label {
@@ -141,12 +188,20 @@
             cursor: pointer;
         }
 
+        body.dark-mode .toggle-switch {
+            background: #555;
+        }
+
         .thinking-toggle.disabled .toggle-switch {
             cursor: not-allowed;
         }
 
         .toggle-switch.active {
             background: #667eea;
+        }
+
+        body.dark-mode .toggle-switch.active {
+            background: #7c8ef0;
         }
 
         .toggle-slider {
@@ -183,6 +238,13 @@
             font-size: 12px;
             align-items: center;
             gap: 8px;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .thinking-indicator {
+            background: #1a3a52;
+            border-color: #2b5a7f;
+            color: #6eb4f0;
         }
 
         .thinking-indicator.active {
@@ -195,6 +257,10 @@
             background: #1976d2;
             border-radius: 50%;
             animation: pulse 1.5s infinite;
+        }
+
+        body.dark-mode .thinking-indicator .thinking-dot {
+            background: #6eb4f0;
         }
 
         @keyframes pulse {
@@ -219,6 +285,13 @@
             white-space: pre-wrap;
             max-height: 200px;
             overflow-y: auto;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .thinking-content {
+            background: #2a2a2a;
+            border-left-color: #2b5a7f;
+            color: #b0b0b0;
         }
 
         .thinking-content summary {
@@ -227,6 +300,11 @@
             font-weight: 600;
             color: #1976d2;
             margin-bottom: 8px;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .thinking-content summary {
+            color: #6eb4f0;
         }
 
         .api-key-section {
@@ -246,6 +324,15 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 14px;
+            background: white;
+            color: #333;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .api-key-section input {
+            background: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
         }
 
         .api-key-section input[type="password"] {
@@ -260,6 +347,7 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 14px;
+            transition: background 0.3s ease;
         }
 
         .api-key-section button:hover {
@@ -286,6 +374,12 @@
             font-size: 14px;
             color: #555;
             font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .temperature-field label,
+        body.dark-mode .thinking-tokens-field label {
+            color: #b0b0b0;
         }
 
 		.temperature-field input {
@@ -295,7 +389,16 @@
 			border-radius: 5px;
 			font-size: 14px;
 			text-align: center;
+            background: white;
+            color: #333;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 		}
+
+        body.dark-mode .temperature-field input {
+            background: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
+        }
 
 		.thinking-tokens-field input {
 			width: 105px;
@@ -304,12 +407,27 @@
 			border-radius: 5px;
 			font-size: 14px;
 			text-align: center;
+            background: white;
+            color: #333;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 		}
+
+        body.dark-mode .thinking-tokens-field input {
+            background: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
+        }
 		
         .temperature-field input:disabled, .thinking-tokens-field input:disabled {
             background-color: #f5f5f5;
             color: #999;
             cursor: not-allowed;
+        }
+
+        body.dark-mode .temperature-field input:disabled,
+        body.dark-mode .thinking-tokens-field input:disabled {
+            background-color: #1a1a1a;
+            color: #666;
         }
 
         /* Thinking tokens field specific styling */
@@ -327,8 +445,17 @@
             cursor: not-allowed;
         }
 
+        body.dark-mode .thinking-tokens-field.disabled input {
+            background-color: #1a1a1a;
+            color: #666;
+        }
+
         .thinking-tokens-field.disabled label {
             color: #999;
+        }
+
+        body.dark-mode .thinking-tokens-field.disabled label {
+            color: #666;
         }
 
         /* Right-side buttons positioning */
@@ -349,6 +476,7 @@
             cursor: pointer;
             font-size: 14px;
             white-space: nowrap;
+            transition: background 0.3s ease;
         }
 
         .clear-button {
@@ -394,14 +522,6 @@
             background: #f44336;
         }
 
-        /* Chat container wrapper for minimap */
-        .chat-wrapper {
-            flex: 1;
-            display: flex;
-            position: relative;
-            overflow: hidden;
-        }
-
         .chat-container {
             flex: 1;
             overflow-y: auto;
@@ -411,62 +531,12 @@
             flex-direction: column;
             gap: 15px;
             position: relative;
+            background: white;
+            transition: background 0.3s ease;
         }
 
-        /* Minimap styles */
-        .minimap-container {
-            width: 120px;
-            background: #f8f9fa;
-            border-left: 1px solid #e0e0e0;
-            position: relative;
-            overflow: hidden;
-            flex-shrink: 0;
-            display: none;
-        }
-
-        .minimap-container.visible {
-            display: block;
-        }
-
-        .minimap-content {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            padding: 5px;
-            cursor: pointer;
-        }
-
-        .minimap-message {
-            margin-bottom: 3px;
-            border-radius: 2px;
-            opacity: 0.7;
-            transition: opacity 0.2s;
-        }
-
-        .minimap-message:hover {
-            opacity: 1;
-        }
-
-        .minimap-message.user {
-            background: #667eea;
-            margin-left: auto;
-            width: 70%;
-        }
-
-        .minimap-message.assistant {
-            background: #d0d0d0;
-            width: 85%;
-        }
-
-        .minimap-viewport {
-            position: absolute;
-            left: 0;
-            right: 0;
-            background: rgba(102, 126, 234, 0.2);
-            border: 1px solid rgba(102, 126, 234, 0.5);
-            pointer-events: none;
-            transition: top 0.1s, height 0.1s;
+        body.dark-mode .chat-container {
+            background: #1e1e1e;
         }
 
         .message {
@@ -507,6 +577,7 @@
             width: fit-content;
             max-width: 100%;
             position: relative;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         .message.user .message-content {
@@ -515,9 +586,18 @@
             white-space: pre-wrap;
         }
 
+        body.dark-mode .message.user .message-content {
+            background: #5568d3;
+        }
+
         .message.assistant .message-content {
             background: #f1f3f5;
             color: #333;
+        }
+
+        body.dark-mode .message.assistant .message-content {
+            background: #2a2a2a;
+            color: #e0e0e0;
         }
 
 		/* Delete button styles */
@@ -558,6 +638,44 @@
 			background: #c82333;
 		}
 
+		/* Scroll to top button styles */
+		.scroll-to-top-button {
+			position: absolute;
+			bottom: 8px;
+			right: 8px;
+			width: 28px;
+			height: 28px;
+			min-width: 28px;
+			min-height: 28px;
+			border-radius: 50%;
+			background: #667eea;
+			color: white;
+			border: none;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: bold;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			text-align: center;
+			line-height: 0;
+			opacity: 0;
+			transition: opacity 0.2s, background 0.2s;
+			z-index: 1000;
+			padding: 0;
+			overflow: hidden;
+			pointer-events: auto;
+		}
+
+		.message:hover .scroll-to-top-button {
+			opacity: 0.7;
+		}
+
+		.scroll-to-top-button:hover {
+			opacity: 1 !important;
+			background: #5568d3;
+		}
+
         /* Ensure code blocks and pre elements can expand properly */
         .message.assistant .message-content pre {
             margin: 12px 0;
@@ -589,6 +707,7 @@
             margin-top: 16px;
             margin-bottom: 8px;
             font-weight: 600;
+            transition: color 0.3s ease;
         }
 
         .message.assistant .message-content h1 { font-size: 1.5em; }
@@ -615,6 +734,12 @@
             margin: 8px 0;
             color: #666;
             font-style: italic;
+            transition: border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .message.assistant .message-content blockquote {
+            border-left-color: #7c8ef0;
+            color: #999;
         }
 
         .message.assistant .message-content code {
@@ -645,7 +770,7 @@
             font-size: 12px;
             z-index: 10;
             opacity: 0.8;
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, background 0.3s ease;
         }
 
         .copy-button:hover {
@@ -670,6 +795,12 @@
             padding: 8px;
             text-align: left;
             white-space: nowrap;
+            transition: border-color 0.3s ease, background 0.3s ease;
+        }
+
+        body.dark-mode .message.assistant .message-content th,
+        body.dark-mode .message.assistant .message-content td {
+            border-color: #404040;
         }
 
         .message.assistant .message-content th {
@@ -677,9 +808,18 @@
             font-weight: 600;
         }
 
+        body.dark-mode .message.assistant .message-content th {
+            background: #333;
+        }
+
         .message.assistant .message-content a {
             color: #667eea;
             text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .message.assistant .message-content a {
+            color: #7c8ef0;
         }
 
         .message.assistant .message-content a:hover {
@@ -690,6 +830,11 @@
             margin: 16px 0;
             border: none;
             border-top: 1px solid #e0e0e0;
+            transition: border-color 0.3s ease;
+        }
+
+        body.dark-mode .message.assistant .message-content hr {
+            border-top-color: #404040;
         }
 
         .message-avatar {
@@ -702,6 +847,7 @@
             font-weight: bold;
             font-size: 14px;
             flex-shrink: 0;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         .message.user .message-avatar {
@@ -709,9 +855,18 @@
             color: white;
         }
 
+        body.dark-mode .message.user .message-avatar {
+            background: #5a3780;
+        }
+
         .message.assistant .message-avatar {
             background: #e9ecef;
             color: #667eea;
+        }
+
+        body.dark-mode .message.assistant .message-avatar {
+            background: #2d2d2d;
+            color: #7c8ef0;
         }
 
         .input-container {
@@ -719,6 +874,12 @@
             border-top: 1px solid #e0e0e0;
             background: #f8f9fa;
             border-radius: 0 0 10px 10px;
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
+        body.dark-mode .input-container {
+            background: #252525;
+            border-top-color: #404040;
         }
 
         .input-wrapper {
@@ -741,10 +902,23 @@
             max-height: 200px;
             overflow-y: auto;
             line-height: 1.5;
+            background: white;
+            color: #333;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode #messageInput {
+            background: #2d2d2d;
+            border-color: #404040;
+            color: #e0e0e0;
         }
 
         #messageInput:focus {
             border-color: #667eea;
+        }
+
+        body.dark-mode #messageInput:focus {
+            border-color: #7c8ef0;
         }
 
         /* Button container for Send/Cancel */
@@ -788,6 +962,10 @@
             cursor: not-allowed;
         }
 
+        body.dark-mode #sendButton:disabled {
+            background: #555;
+        }
+
         #sendButton.hidden {
             opacity: 0;
             pointer-events: none;
@@ -822,6 +1000,10 @@
             animation: bounce 1.4s infinite ease-in-out both;
         }
 
+        body.dark-mode .loading-dot {
+            background: #7c8ef0;
+        }
+
         .loading-dot:nth-child(1) {
             animation-delay: -0.32s;
         }
@@ -846,6 +1028,13 @@
             border-radius: 10px;
             margin: 10px 0;
             border: 1px solid #fcc;
+            transition: background 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .error-message {
+            background: #3d1a1a;
+            color: #ff6b6b;
+            border-color: #5a2a2a;
         }
 
         .debug-info {
@@ -853,6 +1042,11 @@
             color: #999;
             margin-top: 5px;
             font-family: monospace;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .debug-info {
+            color: #777;
         }
 
         .max-tokens-info {
@@ -860,6 +1054,11 @@
             color: #666;
             margin-left: 10px;
             font-style: italic;
+            transition: color 0.3s ease;
+        }
+
+        body.dark-mode .max-tokens-info {
+            color: #999;
         }
 
         .session-tokens-info {
@@ -870,6 +1069,12 @@
             padding: 4px 8px;
             background: #e8eaf6;
             border-radius: 4px;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        body.dark-mode .session-tokens-info {
+            background: #2a2d4a;
+            color: #7c8ef0;
         }
 
         /* Hidden file input */
@@ -888,7 +1093,7 @@
         </div>
 
         <div class="header">
-            <h1>Chat with Claude AI <span class="status-indicator disconnected" id="statusIndicator"></span></h1>
+            <h1>Chat with Claude AI <span class="status-indicator disconnected" id="statusIndicator"></span> </h1>
             <div class="api-key-section" id="apiKeySection">
                 <input type="password" id="apiKeyInput" placeholder="Enter Anthropic API key">
                 <button onclick="saveApiKey()">Save API Key</button>
@@ -910,9 +1115,10 @@
                 </select>
                 <span class="max-tokens-info" id="maxTokensInfo">Max context/output tokens: (200,000, 64,000)</span>
                 <span class="session-tokens-info" id="sessionTokensInfo">Session: 0 tokens</span>
+				<span class="debug-info" id="debugInfo"></span>
             </div>
             
-            <!-- Thinking toggles moved here - Setup is now FIRST -->
+            <!-- Thinking toggles -->
             <div class="thinking-toggles-container">
                 <div class="thinking-toggle">
                     <label>
@@ -941,33 +1147,25 @@
                     </label>
                 </div>
 
+                <div class="thinking-toggle">
+                    <label>
+                        <span>Dark Mode</span>
+                        <div class="toggle-switch" id="darkModeToggle" onclick="toggleDarkMode()">
+                            <div class="toggle-slider"></div>
+						</div>
+                    </label>
+                </div>
+
                 <div class="thinking-indicator" id="thinkingIndicator">
                     <div class="thinking-dot"></div>
                     <span id="thinkingIndicatorText">Thinking mode enabled (4000 thinking tokens).</span>
                 </div>
-
-                <div class="thinking-toggle">
-                    <label>
-                        <span>Minimap</span>
-                        <div class="toggle-switch" id="minimapToggle" onclick="toggleMinimap()">
-                            <div class="toggle-slider"></div>
-                        </div>
-                    </label>
-                </div>
             </div>
-            <div class="debug-info" id="debugInfo"></div>
+            <!-- <div class="debug-info" id="debugInfo"></div> -->
         </div>
         
-        <div class="chat-wrapper">
-            <div class="chat-container" id="chatContainer">
-                <!-- Initial message will be set by JavaScript -->
-            </div>
-            
-            <!-- Minimap -->
-            <div class="minimap-container" id="minimapContainer">
-                <div class="minimap-content" id="minimapContent"></div>
-                <div class="minimap-viewport" id="minimapViewport"></div>
-            </div>
+        <div class="chat-container" id="chatContainer">
+            <!-- Initial message will be set by JavaScript -->
         </div>
         
         <div class="input-container">
@@ -1005,7 +1203,7 @@
         let thinkingMode = false;
         let showThinking = false;
         let setupVisible = false;
-        let minimapVisible = false;
+        let darkMode = false;
 
         // Temperature state
         let currentTemperature = 0.7;
@@ -1031,8 +1229,8 @@
             'claude-opus-4-1-20250805': 200000
         };
 
-        // Minimap state
-        let minimapScrollTimeout = null;
+        // Minimum height threshold for showing scroll-to-top button (in pixels)
+        const SCROLL_BUTTON_HEIGHT_THRESHOLD = 400;
 
         // Configure marked options
         marked.setOptions({
@@ -1070,153 +1268,29 @@
             mangle: false
         });
 
-        // Minimap functions
-        function toggleMinimap() {
-            minimapVisible = !minimapVisible;
-            localStorage.setItem('minimap_visible', minimapVisible.toString());
-            updateMinimapToggle();
-            updateMinimap();
+        function toggleDarkMode() {
+            darkMode = !darkMode;
+            localStorage.setItem('dark_mode', darkMode.toString());
+            updateDarkModeToggle();
+            applyDarkMode();
         }
 
-        function updateMinimapToggle() {
-            const toggle = document.getElementById('minimapToggle');
-            const container = document.getElementById('minimapContainer');
+        function updateDarkModeToggle() {
+            const toggle = document.getElementById('darkModeToggle');
             
-            if (minimapVisible) {
+            if (darkMode) {
                 toggle.classList.add('active');
-                container.classList.add('visible');
-                updateMinimap();
             } else {
                 toggle.classList.remove('active');
-                container.classList.remove('visible');
             }
         }
 
-		function updateMinimap() {
-			if (!minimapVisible) return;
-
-			const chatContainer = document.getElementById('chatContainer');
-			const minimapContent = document.getElementById('minimapContent');
-			const minimapContainer = document.getElementById('minimapContainer');
-			const messages = chatContainer.querySelectorAll('.message');
-			
-			// Clear existing minimap content
-			minimapContent.innerHTML = '';
-			
-			if (messages.length === 0) return;
-			
-			// Calculate scale factor
-			const chatHeight = chatContainer.scrollHeight;
-			const minimapHeight = minimapContainer.offsetHeight;
-			const minimapPadding = 10; // 5px top + 5px bottom from CSS padding
-			const availableHeight = minimapHeight - minimapPadding;
-			
-			// Calculate total margin space needed
-			const minimapMarginPerMessage = 3;
-			const totalMarginSpace = minimapMarginPerMessage * (messages.length - 1);
-			
-			// Scale factor accounts for both message heights and margins
-			const scaleFactor = (availableHeight - totalMarginSpace) / chatHeight;
-			
-			// Create minimap representation of each message
-			messages.forEach((message) => {
-				const minimapMessage = document.createElement('div');
-				minimapMessage.className = 'minimap-message';
-				
-				if (message.classList.contains('user')) {
-					minimapMessage.classList.add('user');
-				} else if (message.classList.contains('assistant')) {
-					minimapMessage.classList.add('assistant');
-				}
-				
-				// Calculate height based on actual message height
-				const messageHeight = message.offsetHeight;
-				const minimapMessageHeight = Math.max(2, messageHeight * scaleFactor);
-				minimapMessage.style.height = minimapMessageHeight + 'px';
-				
-				minimapContent.appendChild(minimapMessage);
-			});
-			
-			updateMinimapViewport();
-		}
-
-		function updateMinimapViewport() {
-			if (!minimapVisible) return;
-
-			const chatContainer = document.getElementById('chatContainer');
-			const minimapContainer = document.getElementById('minimapContainer');
-			const minimapContent = document.getElementById('minimapContent');
-			const minimapViewport = document.getElementById('minimapViewport');
-			
-			const scrollTop = chatContainer.scrollTop;
-			const scrollHeight = chatContainer.scrollHeight;
-			const clientHeight = chatContainer.clientHeight;
-			
-			// Get the actual rendered height of the minimap content
-			const minimapContentHeight = minimapContent.scrollHeight;
-			const minimapContainerHeight = minimapContainer.offsetHeight;
-			
-			// Calculate what portion of the content is scrolled
-			const scrollRatio = scrollTop / scrollHeight;
-			
-			// Calculate what portion is visible in the actual chat
-			const visibleRatio = clientHeight / scrollHeight;
-			
-			// Apply these ratios to the minimap
-			const viewportTop = scrollRatio * minimapContentHeight;
-			
-			// The viewport height should represent the visible portion, but never exceed the minimap container
-			let viewportHeight = visibleRatio * minimapContentHeight;
-			
-			// Ensure viewport doesn't exceed the minimap container bounds
-			const maxViewportHeight = minimapContainerHeight - viewportTop;
-			viewportHeight = Math.min(viewportHeight, maxViewportHeight);
-			
-			// Set minimum height for visibility
-			viewportHeight = Math.max(20, viewportHeight);
-			
-			minimapViewport.style.top = viewportTop + 'px';
-			minimapViewport.style.height = viewportHeight + 'px';
-		}
-
-        function handleMinimapClick(event) {
-            const minimapContainer = document.getElementById('minimapContainer');
-            const chatContainer = document.getElementById('chatContainer');
-            const minimapHeight = minimapContainer.offsetHeight;
-            const clickY = event.offsetY;
-            
-            // Calculate corresponding scroll position
-            // Calculate corresponding scroll position
-            const scrollPercentage = clickY / minimapHeight;
-            const scrollHeight = chatContainer.scrollHeight;
-            const targetScroll = scrollPercentage * scrollHeight;
-            
-            chatContainer.scrollTop = targetScroll;
-        }
-
-        function initializeMinimap() {
-            const minimapContent = document.getElementById('minimapContent');
-            const chatContainer = document.getElementById('chatContainer');
-            
-            // Handle minimap clicks
-            minimapContent.addEventListener('click', handleMinimapClick);
-            
-            // Update viewport on scroll
-            chatContainer.addEventListener('scroll', () => {
-                if (minimapScrollTimeout) {
-                    clearTimeout(minimapScrollTimeout);
-                }
-                minimapScrollTimeout = setTimeout(() => {
-                    updateMinimapViewport();
-                }, 50);
-            });
-            
-            // Update minimap on window resize
-            window.addEventListener('resize', () => {
-                if (minimapVisible) {
-                    updateMinimap();
-                }
-            });
+        function applyDarkMode() {
+            if (darkMode) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
         }
 
         function setInitialGreeting() {
@@ -1235,8 +1309,6 @@
                     <div class="message-content">${escapeHtml(greetingMessage)}</div>
                 </div>
             `;
-            
-            updateMinimap();
         }
 
         function toggleSetup() {
@@ -1377,8 +1449,6 @@
                 
                 updateDebugInfo('Request cancelled');
                 messageInput.focus();
-                
-                updateMinimap();
             }
         }
 
@@ -1395,81 +1465,121 @@
             }
         }
 
-        function deleteLastExchange() {
-            const chatContainer = document.getElementById('chatContainer');
-            const messages = chatContainer.querySelectorAll('.message');
-            
-            if (messages.length < 2) {
-                return;
-            }
-            
-            let lastAssistantIndex = -1;
-            for (let i = messages.length - 1; i >= 0; i--) {
-                if (messages[i].classList.contains('assistant')) {
-                    lastAssistantIndex = i;
-                    break;
-                }
-            }
-            
-            if (lastAssistantIndex <= 0) {
-                return;
-            }
-            
-            let precedingUserIndex = -1;
-            for (let i = lastAssistantIndex - 1; i >= 0; i--) {
-                if (messages[i].classList.contains('user')) {
-                    precedingUserIndex = i;
-                    break;
-                }
-            }
-            
-            if (precedingUserIndex < 0) {
-                return;
-            }
-            
-            const userMessageContent = messages[precedingUserIndex].querySelector('.message-content').textContent.trim();
-            
-            messages[lastAssistantIndex].remove();
-            messages[precedingUserIndex].remove();
-            
-            if (conversationHistory.length >= 2) {
-                conversationHistory.pop();
-                conversationHistory.pop();
-            }
-            
-            const messageInput = document.getElementById('messageInput');
-            messageInput.value = userMessageContent;
-            messageInput.focus();
-            
-            autoResizeTextarea();
-            updateDeleteButtons();
-            updateDebugInfo('Last exchange deleted and message restored to input');
-            updateMinimap();
-        }
+		// Replace the deleteLastExchange function with this enhanced version:
+		function deleteLastExchange() {
+			const chatContainer = document.getElementById('chatContainer');
+			const messages = chatContainer.querySelectorAll('.message');
+			
+			if (messages.length < 2) {
+				return;
+			}
+			
+			let lastAssistantIndex = -1;
+			for (let i = messages.length - 1; i >= 0; i--) {
+				if (messages[i].classList.contains('assistant')) {
+					lastAssistantIndex = i;
+					break;
+				}
+			}
+			
+			if (lastAssistantIndex <= 0) {
+				return;
+			}
+			
+			let precedingUserIndex = -1;
+			for (let i = lastAssistantIndex - 1; i >= 0; i--) {
+				if (messages[i].classList.contains('user')) {
+					precedingUserIndex = i;
+					break;
+				}
+			}
+			
+			if (precedingUserIndex < 0) {
+				return;
+			}
+			
+			const userMessageContent = messages[precedingUserIndex].querySelector('.message-content').textContent.trim();
+			
+			messages[lastAssistantIndex].remove();
+			messages[precedingUserIndex].remove();
+			
+			if (conversationHistory.length >= 2) {
+				conversationHistory.pop();
+				conversationHistory.pop();
+			}
+			
+			const messageInput = document.getElementById('messageInput');
+			messageInput.value = userMessageContent;
+			messageInput.focus();
+			
+			autoResizeTextarea();
+			
+			// Immediately update delete buttons after removal
+			updateDeleteButtons();
+			
+			updateDebugInfo('Last exchange deleted and message restored to input');
+		}
 
-        function updateDeleteButtons() {
-            const chatContainer = document.getElementById('chatContainer');
-            
-            const existingButtons = chatContainer.querySelectorAll('.delete-button');
-            existingButtons.forEach(btn => btn.remove());
-            
-            const assistantMessages = chatContainer.querySelectorAll('.message.assistant');
-            
-            if (assistantMessages.length > 1) {
-                const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
-                
-                const deleteButton = document.createElement('button');
-                deleteButton.className = 'delete-button';
-                deleteButton.innerHTML = '×';
-                deleteButton.title = 'Delete this response and restore your message';
-                deleteButton.onclick = deleteLastExchange;
-                
-                const messageContent = lastAssistantMessage.querySelector('.message-content');
-                if (messageContent) {
-                    messageContent.appendChild(deleteButton);
-                }
-            }
-        }
+		// The updateDeleteButtons function remains the same but is now called after each deletion
+		function updateDeleteButtons() {
+			const chatContainer = document.getElementById('chatContainer');
+			
+			const existingButtons = chatContainer.querySelectorAll('.delete-button');
+			existingButtons.forEach(btn => btn.remove());
+			
+			const assistantMessages = chatContainer.querySelectorAll('.message.assistant');
+			
+			// Only add delete button if there's more than just the initial greeting
+			if (assistantMessages.length > 1) {
+				const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
+				
+				const deleteButton = document.createElement('button');
+				deleteButton.className = 'delete-button';
+				deleteButton.innerHTML = '×';
+				deleteButton.title = 'Delete this response and restore your message';
+				deleteButton.onclick = deleteLastExchange;
+				
+				const messageContent = lastAssistantMessage.querySelector('.message-content');
+				if (messageContent) {
+					messageContent.appendChild(deleteButton);
+				}
+			}
+		}
+
+
+		function scrollToTopOfMessage(messageElement) {
+			const messageContent = messageElement.querySelector('.message-content');
+			if (messageContent) {
+				messageContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			}
+		}
+
+		function addScrollToTopButtons() {
+			const chatContainer = document.getElementById('chatContainer');
+			
+			// Remove existing scroll-to-top buttons
+			const existingScrollButtons = chatContainer.querySelectorAll('.scroll-to-top-button');
+			existingScrollButtons.forEach(btn => btn.remove());
+			
+			// Get all messages (both user and assistant)
+			const allMessages = chatContainer.querySelectorAll('.message');
+			
+			allMessages.forEach(messageDiv => {
+				const messageContent = messageDiv.querySelector('.message-content');
+				if (messageContent && messageContent.offsetHeight > SCROLL_BUTTON_HEIGHT_THRESHOLD) {
+					const scrollButton = document.createElement('button');
+					scrollButton.className = 'scroll-to-top-button';
+					scrollButton.innerHTML = '↑';
+					scrollButton.title = 'Scroll to top of message';
+					scrollButton.onclick = function(e) {
+						e.stopPropagation();
+						scrollToTopOfMessage(messageDiv);
+					};
+					
+					messageContent.appendChild(scrollButton);
+				}
+			});
+		}
 
         function saveChat() {
             if (conversationHistory.length === 0) {
@@ -1590,7 +1700,7 @@
 			
 			await new Promise(resolve => setTimeout(resolve, 300));
 			updateDeleteButtons();
-			updateMinimap();
+			addScrollToTopButtons();
 			chatContainer.scrollTop = chatContainer.scrollHeight;
 		}
 
@@ -1609,8 +1719,6 @@
 
             const thinkingTokensInput = document.getElementById('thinkingTokensInput');
             thinkingTokensInput.addEventListener('input', onThinkingTokensChange);
-            
-            initializeMinimap();
         });
 
         function updateSessionTokensDisplay() {
@@ -1643,13 +1751,7 @@
                 setupVisible = savedSetupVisible === 'true';
             }
             
-            const savedMinimapVisible = localStorage.getItem('minimap_visible');
-            if (savedMinimapVisible === 'true') {
-                minimapVisible = true;
-            }
-            
             updateSetupToggle();
-            updateMinimapToggle();
             setInitialGreeting();
             
             const savedThinkingMode = localStorage.getItem('thinking_mode');
@@ -1662,6 +1764,13 @@
             if (savedShowThinking === 'true') {
                 showThinking = true;
                 updateShowThinkingToggle();
+            }
+
+            const savedDarkMode = localStorage.getItem('dark_mode');
+            if (savedDarkMode === 'true') {
+                darkMode = true;
+                updateDarkModeToggle();
+                applyDarkMode();
             }
 
             const savedTemp = localStorage.getItem('temperature');
@@ -1853,8 +1962,7 @@
         }
 
         async function sendMessage() {
-            updateDebugInfo('');
-			if (!API_KEY) {
+            if (!API_KEY) {
                 alert('Please enter and save your API key first');
                 return;
             }
@@ -1962,6 +2070,7 @@
                 });
 
                 updateDeleteButtons();
+				addScrollToTopButtons();
                 updateDebugInfo('Message sent successfully');
 
             } catch (error) {
@@ -2057,9 +2166,6 @@
             
             chatContainer.appendChild(messageDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-            
-            // Update minimap after adding message
-            updateMinimap();
         }
 
 		function renderMarkdownWithCodeBlocks(content) {
@@ -2210,7 +2316,6 @@
             `;
             chatContainer.appendChild(loadingDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-            updateMinimap();
             return loadingId;
         }
 
@@ -2218,7 +2323,6 @@
             const loadingDiv = document.getElementById(loadingId);
             if (loadingDiv) {
                 loadingDiv.remove();
-                updateMinimap();
             }
         }
 
@@ -2229,7 +2333,6 @@
             errorDiv.innerHTML = `<strong>Error:</strong> ${escapeHtml(message)}`;
             chatContainer.appendChild(errorDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
-            updateMinimap();
         }
 
         function escapeHtml(text) {
