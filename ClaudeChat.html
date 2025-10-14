@@ -751,18 +751,16 @@
             border-radius: 3px;
         }
 
-        /* Copy button for code blocks */
+        /* Copy button and Run button for code blocks */
         .code-block-wrapper {
             position: relative;
             margin: 12px 0;
         }
 
-        .copy-button {
+        .copy-button, .run-button {
             position: absolute;
             top: 8px;
-            right: 8px;
             padding: 4px 8px;
-            background: #667eea;
             color: white;
             border: none;
             border-radius: 4px;
@@ -773,12 +771,27 @@
             transition: opacity 0.2s, background 0.3s ease;
         }
 
+        .copy-button {
+            right: 8px;
+            background: #667eea;
+        }
+
         .copy-button:hover {
             opacity: 1;
         }
 
         .copy-button.copied {
             background: #4caf50;
+        }
+
+        .run-button {
+            right: 60px;
+            background: #28a745;
+        }
+
+        .run-button:hover {
+            opacity: 1;
+            background: #218838;
         }
 
         .message.assistant .message-content table {
@@ -1161,7 +1174,6 @@
                     <span id="thinkingIndicatorText">Thinking mode enabled (4000 thinking tokens).</span>
                 </div>
             </div>
-            <!-- <div class="debug-info" id="debugInfo"></div> -->
         </div>
         
         <div class="chat-container" id="chatContainer">
@@ -1465,7 +1477,6 @@
             }
         }
 
-		// Replace the deleteLastExchange function with this enhanced version:
 		function deleteLastExchange() {
 			const chatContainer = document.getElementById('chatContainer');
 			const messages = chatContainer.querySelectorAll('.message');
@@ -1514,13 +1525,11 @@
 			
 			autoResizeTextarea();
 			
-			// Immediately update delete buttons after removal
 			updateDeleteButtons();
 			
 			updateDebugInfo('Last exchange deleted and message restored to input');
 		}
 
-		// The updateDeleteButtons function remains the same but is now called after each deletion
 		function updateDeleteButtons() {
 			const chatContainer = document.getElementById('chatContainer');
 			
@@ -1529,7 +1538,6 @@
 			
 			const assistantMessages = chatContainer.querySelectorAll('.message.assistant');
 			
-			// Only add delete button if there's more than just the initial greeting
 			if (assistantMessages.length > 1) {
 				const lastAssistantMessage = assistantMessages[assistantMessages.length - 1];
 				
@@ -1546,7 +1554,6 @@
 			}
 		}
 
-
 		function scrollToTopOfMessage(messageElement) {
 			const messageContent = messageElement.querySelector('.message-content');
 			if (messageContent) {
@@ -1557,11 +1564,9 @@
 		function addScrollToTopButtons() {
 			const chatContainer = document.getElementById('chatContainer');
 			
-			// Remove existing scroll-to-top buttons
 			const existingScrollButtons = chatContainer.querySelectorAll('.scroll-to-top-button');
 			existingScrollButtons.forEach(btn => btn.remove());
 			
-			// Get all messages (both user and assistant)
 			const allMessages = chatContainer.querySelectorAll('.message');
 			
 			allMessages.forEach(messageDiv => {
@@ -1570,7 +1575,7 @@
 					const scrollButton = document.createElement('button');
 					scrollButton.className = 'scroll-to-top-button';
 					scrollButton.innerHTML = '↑';
-					scrollButton.title = 'Scroll to top of message';
+					scrollButton.title = 'Scroll to top of this message';
 					scrollButton.onclick = function(e) {
 						e.stopPropagation();
 						scrollToTopOfMessage(messageDiv);
@@ -2171,7 +2176,6 @@
 		function renderMarkdownWithCodeBlocks(content) {
 			const codeBlocks = [];
 			let processedContent = '';
-			let lastIndex = 0;
 			let inCodeBlock = false;
 			let codeBlockStart = -1;
 			let currentLang = '';
@@ -2265,7 +2269,7 @@
 				highlightedCode = escapeHtml(codeToHighlight);
 			}
 			
-			return `<div class="code-block-wrapper">
+			return `<div class="code-block-wrapper" data-language="${escapeHtml(mappedLang)}">
 						<pre><code class="language-${escapeHtml(mappedLang)}">${highlightedCode}</code></pre>
 					</div>`;
 		}
@@ -2276,19 +2280,23 @@
             codeBlocks.forEach(block => {
                 if (block.querySelector('.copy-button')) return;
                 
-                const button = document.createElement('button');
-                button.className = 'copy-button';
-                button.textContent = 'Copy';
+                const language = block.getAttribute('data-language') || '';
+                const isRunnable = isRunnableLanguage(language);
                 
-                button.onclick = function() {
+                // Add Copy button
+                const copyButton = document.createElement('button');
+                copyButton.className = 'copy-button';
+                copyButton.textContent = 'Copy';
+                
+                copyButton.onclick = function() {
                     const code = block.querySelector('code').textContent;
                     navigator.clipboard.writeText(code).then(() => {
-                        button.textContent = 'Copied!';
-                        button.classList.add('copied');
+                        copyButton.textContent = 'Copied!';
+                        copyButton.classList.add('copied');
                         
                         setTimeout(() => {
-                            button.textContent = 'Copy';
-                            button.classList.remove('copied');
+                            copyButton.textContent = 'Copy';
+                            copyButton.classList.remove('copied');
                         }, 2000);
                     }).catch(err => {
                         console.error('Failed to copy:', err);
@@ -2296,8 +2304,93 @@
                     });
                 };
                 
-                block.appendChild(button);
+                block.appendChild(copyButton);
+                
+                // Add Run button for HTML/JavaScript
+                if (isRunnable) {
+                    const runButton = document.createElement('button');
+                    runButton.className = 'run-button';
+                    runButton.textContent = 'Run';
+                    
+                    runButton.onclick = function() {
+                        const code = block.querySelector('code').textContent;
+                        runCode(code, language);
+                    };
+                    
+                    block.appendChild(runButton);
+                }
             });
+        }
+
+        function isRunnableLanguage(language) {
+            const runnableLanguages = ['html', 'markup', 'javascript', 'js'];
+            return runnableLanguages.includes(language.toLowerCase());
+        }
+
+        function runCode(code, language) {
+            // Create a new window/tab to run the code
+            const newWindow = window.open('', '_blank');
+            
+            if (!newWindow) {
+                alert('Please allow pop-ups to run the code');
+                return;
+            }
+            
+            // If it's pure JavaScript, wrap it in HTML
+            if (language === 'javascript' || language === 'js') {
+                code = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Output</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        #output {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h2>JavaScript Output</h2>
+    <div id="output"></div>
+    <script>
+        // Override console.log to display in the page
+        (function() {
+            const outputDiv = document.getElementById('output');
+            const oldLog = console.log;
+            console.log = function(...args) {
+                oldLog.apply(console, args);
+                const message = args.map(arg => 
+                    typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                ).join(' ');
+                outputDiv.innerHTML += '<div>' + message + '</div>';
+            };
+        })();
+        
+        // User code
+        try {
+            ${code}
+        } catch (error) {
+            document.getElementById('output').innerHTML += '<div style="color: red;">Error: ' + error.message + '</div>';
+        }
+    <\/script>
+</body>
+</html>`;
+            }
+            
+            // Write the code to the new window
+            newWindow.document.open();
+            newWindow.document.write(code);
+            newWindow.document.close();
         }
 
         function showLoading() {
@@ -2330,7 +2423,7 @@
             const chatContainer = document.getElementById('chatContainer');
             const errorDiv = document.createElement('div');
             errorDiv.className = 'error-message';
-            errorDiv.innerHTML = `<strong>Error:</strong> ${escapeHtml(message)}`;
+            errorDiv.innerHTML = '<strong>Error:</strong> ' + escapeHtml(message);
             chatContainer.appendChild(errorDiv);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -2391,7 +2484,7 @@ Here are your options:
    And update the API_URL in this HTML to: http://localhost:3000/api/messages
 
 2. CHROME WITH DISABLED SECURITY (Development only):
-   Mac: open -n -a /Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --args --user-data-dir="/tmp/chrome_dev_test" --disable-web-security
+   Mac: open -n -a /Applications/Google\\\\ Chrome.app/Contents/MacOS/Google\\\\ Chrome --args --user-data-dir="/tmp/chrome_dev_test" --disable-web-security
    Windows: chrome.exe --user-data-dir="C:/Chrome dev session" --disable-web-security
    Linux: google-chrome --user-data-dir="/tmp/chrome_dev_test" --disable-web-security
 
