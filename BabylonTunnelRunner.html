@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tunnel Runner</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        html, body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 22px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            user-select: none;
+            pointer-events: none;
+        }
+        
+        #ui div {
+            margin-bottom: 8px;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255,255,255,0.7);
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+            background: rgba(0,0,0,0.85);
+            padding: 50px 80px;
+            border-radius: 20px;
+            border: 3px solid #ff3333;
+            box-shadow: 0 0 50px rgba(255,0,0,0.5);
+        }
+        
+        #gameOver h1 {
+            color: #ff3333;
+            font-size: 56px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255,0,0,0.8);
+        }
+        
+        #gameOver p {
+            color: #fff;
+            font-size: 28px;
+            margin-bottom: 30px;
+        }
+        
+        #restartBtn {
+            padding: 18px 50px;
+            font-size: 22px;
+            cursor: pointer;
+            background: linear-gradient(145deg, #ff4444, #cc0000);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        #restartBtn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255,0,0,0.6);
+        }
+        
+        #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0,0,0,0.9);
+            padding: 50px 80px;
+            border-radius: 20px;
+            border: 3px solid #00ff88;
+            box-shadow: 0 0 50px rgba(0,255,136,0.3);
+        }
+        
+        #startScreen h1 {
+            color: #00ff88;
+            font-size: 52px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(0,255,136,0.8);
+        }
+        
+        #startScreen p {
+            color: #ccc;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .key {
+            display: inline-block;
+            background: linear-gradient(145deg, #444, #222);
+            color: #fff;
+            padding: 5px 12px;
+            border-radius: 5px;
+            border: 1px solid #666;
+            font-family: monospace;
+            font-weight: bold;
+            margin: 0 3px;
+        }
+        
+        #startBtn {
+            padding: 18px 60px;
+            font-size: 24px;
+            cursor: pointer;
+            background: linear-gradient(145deg, #00ff88, #00aa55);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            margin-top: 20px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        #startBtn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(0,255,136,0.6);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="renderCanvas"></canvas>
+    
+    <div id="ui">
+        <div>🏆 Score: <span id="score">0</span></div>
+        <div>📏 Distance: <span id="distance">0</span>m</div>
+        <div>⚡ Speed: <span id="speed">1.0</span>x</div>
+    </div>
+    
+    <div id="instructions">
+        ⌨️ <span class="key">A</span> Roll Left | <span class="key">D</span> Roll Right | <span class="key">SPACE</span> Jump | Roll around the tunnel to avoid red cubes!
+    </div>
+    
+    <div id="startScreen">
+        <h1>🎮 TUNNEL RUNNER</h1>
+        <p><span class="key">A</span> Roll LEFT along tunnel surface</p>
+        <p><span class="key">D</span> Roll RIGHT along tunnel surface</p>
+        <p><span class="key">SPACE</span> Jump off the surface</p>
+        <p>🌀 Roll around the entire tunnel to dodge obstacles!</p>
+        <p>💀 Avoid the RED CUBES or you explode!</p>
+        <button id="startBtn">START GAME</button>
+    </div>
+    
+    <div id="gameOver">
+        <h1>💥 GAME OVER</h1>
+        <p>Final Score: <span id="finalScore">0</span></p>
+        <p>Distance: <span id="finalDistance">0</span>m</p>
+        <button id="restartBtn">🔄 Play Again</button>
+    </div>
+
+    <script>
+        // ============================================
+        // TUNNEL RUNNER - Babylon.js 3D Game
+        // ============================================
+        
+        // Game Configuration
+        const CONFIG = {
+            ballRadius: 0.5,
+            tunnelRadius: 10,
+            tunnelSegmentLength: 40,
+            tunnelSegmentsAhead: 12,
+            tunnelSegmentsBehind: 2,
+            tunnelSegmentsDeletionBuffer: 5,
+            ballXOffset: 12,
+            baseSpeed: 1.0,
+            maxSpeed: 1.2,
+            speedIncrement: 0.00006,
+            
+            // Angular physics (rolling around tunnel)
+            angularAcceleration: 0.004,
+            angularMaxSpeed: 0.12,
+            angularFriction: 0.985,
+            angularGravity: 0.006,
+            
+            // Jump physics
+            jumpForce: 0.35,
+            radialGravity: 0.014,
+            
+            // Obstacles
+            obstacleFrequency: 0.65,
+            minObstaclesPerSegment: 2,
+            maxObstaclesPerSegment: 6,
+            explosionParticles: 300,
+            
+            // DRAMATIC tunnel bend settings
+            tunnelBendHorizontal: 0.35,
+            tunnelBendVertical: 0.4,
+            tunnelMaxAngleH: 1.2,
+            tunnelMaxAngleV: 1.1,
+            
+            // Dramatic event settings
+            dramaticEventChance: 0.15,
+            dramaticDropStrength: 0.8,
+            dramaticCurveStrength: 0.7,
+            
+            // Camera smoothing settings
+            cameraPositionSmoothing: 0.03,
+            cameraTargetSmoothing: 0.04,
+            cameraLookAheadDistance: 15,
+            
+            // Tunnel path smoothing
+            pathSubdivisions: 30,
+            
+            // Guide line settings
+            guideLineStartT: 0.08,
+            guideLineEndT: 0.92,
+            
+            // Trail particle settings
+            trailFireParticles: 600,
+            trailSmokeParticles: 300,
+            trailSparkParticles: 200
+        };
+
+        // Input State
+        const keys = {
+            left: false,
+            right: false,
+            jump: false
+        };
+
+        // Game State
+        let gameState = {
+            isRunning: false,
+            isGameOver: false,
+            score: 0,
+            distance: 0,
+            speed: CONFIG.baseSpeed,
+            
+            // Ball physics
+            theta: Math.PI,
+            angularVelocity: 0,
+            
+            // Radial position
+            radialPosition: CONFIG.tunnelRadius - CONFIG.ballRadius,
+            radialVelocity: 0,
+            isGrounded: true,
+            
+            // Ball rotation
+            ballRotationX: 0,
+            ballRotationZ: 0,
+            
+            currentSegmentIndex: 0,
+            tunnelPath: [],
+            smoothedPath: [],
+            
+            // Smoothed camera state
+            smoothedCameraPos: null,
+            smoothedCameraTarget: null,
+            smoothedUp: null,
+            
+            // Store current tunnel direction for particles
+            currentTunnelDir: new BABYLON.Vector3(0, 0, 1)
+        };
+
+        // Babylon.js objects
+        let canvas, engine, scene, camera;
+        let ball, ballMaterial, ballTrail;
+        let tunnelSegments = [];
+        let obstacles = [];
+        let explosionParticles;
+        let glowLayer;
+        
+        // Trail particle systems
+        let fireTrailParticles;
+        let smokeTrailParticles;
+        let sparkTrailParticles;
+        let coreGlowParticles;
+
+        // DOM Elements
+        const scoreElement = document.getElementById('score');
+        const distanceElement = document.getElementById('distance');
+        const speedElement = document.getElementById('speed');
+        const gameOverElement = document.getElementById('gameOver');
+        const finalScoreElement = document.getElementById('finalScore');
+        const finalDistanceElement = document.getElementById('finalDistance');
+        const startScreen = document.getElementById('startScreen');
+        const startBtn = document.getElementById('startBtn');
+        const restartBtn = document.getElementById('restartBtn');
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        
+        function init() {
+            canvas = document.getElementById('renderCanvas');
+            engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+            
+            createScene();
+            
+            // Keyboard Event Listeners
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('keyup', handleKeyUp);
+            
+            // Button Event Listeners
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+            startBtn.addEventListener('click', startGame);
+            restartBtn.addEventListener('click', restartGame);
+            
+            // Handle window resize
+            window.addEventListener('resize', () => engine.resize());
+            
+            // Main render loop
+            engine.runRenderLoop(() => {
+                if (gameState.isRunning && !gameState.isGameOver) {
+                    updateGame();
+                }
+                scene.render();
+            });
+        }
+
+        function createScene() {
+            scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color4(0.01, 0.01, 0.05, 1);
+            
+            // Fog for depth effect
+            scene.fogMode = BABYLON.Scene.FOGMODE_EXP2;
+            scene.fogDensity = 0.012;
+            scene.fogColor = new BABYLON.Color3(0.01, 0.01, 0.05);
+            
+            // Camera
+            camera = new BABYLON.FreeCamera('camera', new BABYLON.Vector3(0, 2, -CONFIG.ballXOffset), scene);
+            camera.fov = 0.7;
+            
+            // Lighting
+            const hemisphericLight = new BABYLON.HemisphericLight('hemiLight', new BABYLON.Vector3(0, 1, 0), scene);
+            hemisphericLight.intensity = 0.7;
+            hemisphericLight.groundColor = new BABYLON.Color3(0.2, 0.2, 0.4);
+            
+            const pointLight = new BABYLON.PointLight('pointLight', new BABYLON.Vector3(0, 0, 5), scene);
+            pointLight.intensity = 3.5;
+            pointLight.diffuse = new BABYLON.Color3(0.5, 0.8, 1);
+            pointLight.range = 60;
+            
+            // Ball light with green tint for trail illumination
+            const ballLight = new BABYLON.PointLight('ballLight', new BABYLON.Vector3(0, 0, 0), scene);
+            ballLight.intensity = 2.0;
+            ballLight.diffuse = new BABYLON.Color3(0.3, 1, 0.5);
+            ballLight.range = 25;
+            
+            // Trail light - illuminates the fire trail
+            const trailLight = new BABYLON.PointLight('trailLight', new BABYLON.Vector3(0, 0, 0), scene);
+            trailLight.intensity = 1.5;
+            trailLight.diffuse = new BABYLON.Color3(0.2, 0.8, 0.3);
+            trailLight.range = 15;
+            
+            // Rear light
+            const rearLight = new BABYLON.PointLight('rearLight', new BABYLON.Vector3(0, 0, -10), scene);
+            rearLight.intensity = 2.0;
+            rearLight.diffuse = new BABYLON.Color3(0.4, 0.6, 1);
+            rearLight.range = 40;
+            
+            // Glow layer
+            glowLayer = new BABYLON.GlowLayer('glow', scene);
+            glowLayer.intensity = 0.8;
+            
+            // Create ball
+            createBall();
+            
+            // Create ball trail particles
+            createBallTrailParticles();
+            
+            // Create explosion particle system
+            createExplosionParticles();
+            
+            // Initialize tunnel path
+            initializeTunnelPath();
+            
+            // Create initial tunnel segments
+            for (let i = -CONFIG.tunnelSegmentsBehind; i < CONFIG.tunnelSegmentsAhead; i++) {
+                createTunnelSegment(i);
+            }
+        }
+
+        function createBall() {
+            ball = BABYLON.MeshBuilder.CreateSphere('ball', { diameter: CONFIG.ballRadius * 2, segments: 32 }, scene);
+            
+            ballMaterial = new BABYLON.StandardMaterial('ballMat', scene);
+            ballMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.9, 0.4);
+            ballMaterial.emissiveColor = new BABYLON.Color3(0.08, 0.5, 0.25);
+            ballMaterial.specularColor = new BABYLON.Color3(1, 1, 1);
+            ballMaterial.specularPower = 64;
+            ball.material = ballMaterial;
+            
+            const ballDecal = BABYLON.MeshBuilder.CreateSphere('ballDecal', { diameter: CONFIG.ballRadius * 2.02, segments: 32 }, scene);
+            const decalMat = new BABYLON.StandardMaterial('decalMat', scene);
+            decalMat.diffuseColor = new BABYLON.Color3(0.05, 0.5, 0.2);
+            decalMat.emissiveColor = new BABYLON.Color3(0.02, 0.25, 0.1);
+            decalMat.alpha = 0.5;
+            ballDecal.material = decalMat;
+            ballDecal.parent = ball;
+            
+            glowLayer.addIncludedOnlyMesh(ball);
+        }
+
+        // ============================================
+        // BALL TRAIL PARTICLE SYSTEMS
+        // ============================================
+        
+        function createBallTrailParticles() {
+            // =====================
+            // FIERY GREEN TRAIL (Main fire effect)
+            // =====================
+            fireTrailParticles = new BABYLON.ParticleSystem('fireTrail', CONFIG.trailFireParticles, scene);
+            
+            // Create custom fire texture
+            const fireTexture = new BABYLON.DynamicTexture('fireTex', 64, scene);
+            const fireCtx = fireTexture.getContext();
+            const fireGradient = fireCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            fireGradient.addColorStop(0, 'rgba(255,255,255,1)');
+            fireGradient.addColorStop(0.15, 'rgba(200,255,150,1)');
+            fireGradient.addColorStop(0.3, 'rgba(100,255,80,0.9)');
+            fireGradient.addColorStop(0.5, 'rgba(50,200,50,0.6)');
+            fireGradient.addColorStop(0.7, 'rgba(20,150,30,0.3)');
+            fireGradient.addColorStop(1, 'rgba(0,80,0,0)');
+            fireCtx.fillStyle = fireGradient;
+            fireCtx.fillRect(0, 0, 64, 64);
+            fireTexture.update();
+            
+            fireTrailParticles.particleTexture = fireTexture;
+            fireTrailParticles.emitter = ball;
+            
+            // Emit from behind the ball
+            fireTrailParticles.minEmitBox = new BABYLON.Vector3(-0.15, -0.15, 0.2);
+            fireTrailParticles.maxEmitBox = new BABYLON.Vector3(0.15, 0.15, 0.4);
+            
+            // Green fire colors - bright core to darker edges
+            fireTrailParticles.color1 = new BABYLON.Color4(0.6, 1, 0.4, 1);
+            fireTrailParticles.color2 = new BABYLON.Color4(0.3, 0.9, 0.2, 1);
+            fireTrailParticles.colorDead = new BABYLON.Color4(0, 0.4, 0, 0);
+            
+            // Size over lifetime - starts small, grows, then shrinks
+            fireTrailParticles.minSize = 0.15;
+            fireTrailParticles.maxSize = 0.5;
+            fireTrailParticles.minScaleX = 0.8;
+            fireTrailParticles.maxScaleX = 1.2;
+            fireTrailParticles.minScaleY = 1.0;
+            fireTrailParticles.maxScaleY = 1.5;
+            
+            fireTrailParticles.minLifeTime = 0.15;
+            fireTrailParticles.maxLifeTime = 0.4;
+            fireTrailParticles.emitRate = 200;
+            
+            // Particles trail behind
+            fireTrailParticles.direction1 = new BABYLON.Vector3(-0.3, -0.3, 0.8);
+            fireTrailParticles.direction2 = new BABYLON.Vector3(0.3, 0.3, 1.5);
+            fireTrailParticles.minEmitPower = 3;
+            fireTrailParticles.maxEmitPower = 6;
+            
+            // Slight upward drift for fire effect
+            fireTrailParticles.gravity = new BABYLON.Vector3(0, 1, 0);
+            
+            // Additive blending for glow
+            fireTrailParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+            
+            // Add some turbulence
+            fireTrailParticles.minAngularSpeed = -2;
+            fireTrailParticles.maxAngularSpeed = 2;
+            
+            // Update speed for responsiveness
+            fireTrailParticles.updateSpeed = 0.02;
+            
+            fireTrailParticles.start();
+            
+            // =====================
+            // GREEN GLOWING SMOKE
+            // =====================
+            smokeTrailParticles = new BABYLON.ParticleSystem('smokeTrail', CONFIG.trailSmokeParticles, scene);
+            
+            // Create smoke texture - softer, more diffuse
+            const smokeTexture = new BABYLON.DynamicTexture('smokeTex', 64, scene);
+            const smokeCtx = smokeTexture.getContext();
+            const smokeGradient = smokeCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            smokeGradient.addColorStop(0, 'rgba(150,200,150,0.5)');
+            smokeGradient.addColorStop(0.3, 'rgba(80,150,80,0.35)');
+            smokeGradient.addColorStop(0.6, 'rgba(40,100,40,0.2)');
+            smokeGradient.addColorStop(1, 'rgba(20,60,20,0)');
+            smokeCtx.fillStyle = smokeGradient;
+            smokeCtx.fillRect(0, 0, 64, 64);
+            smokeTexture.update();
+            
+            smokeTrailParticles.particleTexture = smokeTexture;
+            smokeTrailParticles.emitter = ball;
+            
+            // Larger emit box for smoke spread
+            smokeTrailParticles.minEmitBox = new BABYLON.Vector3(-0.25, -0.25, 0.3);
+            smokeTrailParticles.maxEmitBox = new BABYLON.Vector3(0.25, 0.25, 0.6);
+            
+            // Green-tinted smoke colors
+            smokeTrailParticles.color1 = new BABYLON.Color4(0.3, 0.6, 0.3, 0.4);
+            smokeTrailParticles.color2 = new BABYLON.Color4(0.15, 0.4, 0.15, 0.3);
+            smokeTrailParticles.colorDead = new BABYLON.Color4(0.05, 0.15, 0.05, 0);
+            
+            // Smoke grows as it disperses
+            smokeTrailParticles.minSize = 0.4;
+            smokeTrailParticles.maxSize = 1.2;
+            
+            // Longer lifetime for smoke
+            smokeTrailParticles.minLifeTime = 0.4;
+            smokeTrailParticles.maxLifeTime = 1.0;
+            smokeTrailParticles.emitRate = 80;
+            
+            // Slower, more dispersed movement
+            smokeTrailParticles.direction1 = new BABYLON.Vector3(-0.5, -0.3, 0.5);
+            smokeTrailParticles.direction2 = new BABYLON.Vector3(0.5, 0.5, 1.2);
+            smokeTrailParticles.minEmitPower = 1;
+            smokeTrailParticles.maxEmitPower = 2.5;
+            
+            // Smoke rises
+            smokeTrailParticles.gravity = new BABYLON.Vector3(0, 1.5, 0);
+            
+            // Standard blending for smoke opacity
+            smokeTrailParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_STANDARD;
+            
+            // Slow rotation for turbulent smoke look
+            smokeTrailParticles.minAngularSpeed = -0.5;
+            smokeTrailParticles.maxAngularSpeed = 0.5;
+            
+            smokeTrailParticles.start();
+            
+            // =====================
+            // SPARK PARTICLES (Hot embers)
+            // =====================
+            sparkTrailParticles = new BABYLON.ParticleSystem('sparkTrail', CONFIG.trailSparkParticles, scene);
+            
+            // Create spark texture - small bright dots
+            const sparkTexture = new BABYLON.DynamicTexture('sparkTex', 32, scene);
+            const sparkCtx = sparkTexture.getContext();
+            const sparkGradient = sparkCtx.createRadialGradient(16, 16, 0, 16, 16, 16);
+            sparkGradient.addColorStop(0, 'rgba(255,255,255,1)');
+            sparkGradient.addColorStop(0.2, 'rgba(200,255,180,1)');
+            sparkGradient.addColorStop(0.5, 'rgba(100,255,100,0.8)');
+            sparkGradient.addColorStop(1, 'rgba(0,200,0,0)');
+            sparkCtx.fillStyle = sparkGradient;
+            sparkCtx.fillRect(0, 0, 32, 32);
+            sparkTexture.update();
+            
+            sparkTrailParticles.particleTexture = sparkTexture;
+            sparkTrailParticles.emitter = ball;
+            
+            sparkTrailParticles.minEmitBox = new BABYLON.Vector3(-0.2, -0.2, 0.1);
+            sparkTrailParticles.maxEmitBox = new BABYLON.Vector3(0.2, 0.2, 0.3);
+            
+            // Bright green-white sparks
+            sparkTrailParticles.color1 = new BABYLON.Color4(0.8, 1, 0.6, 1);
+            sparkTrailParticles.color2 = new BABYLON.Color4(0.4, 1, 0.3, 1);
+            sparkTrailParticles.colorDead = new BABYLON.Color4(0, 0.5, 0, 0);
+            
+            // Small, intense sparks
+            sparkTrailParticles.minSize = 0.05;
+            sparkTrailParticles.maxSize = 0.15;
+            
+            sparkTrailParticles.minLifeTime = 0.2;
+            sparkTrailParticles.maxLifeTime = 0.6;
+            sparkTrailParticles.emitRate = 60;
+            
+            // Sparks shoot out in various directions
+            sparkTrailParticles.direction1 = new BABYLON.Vector3(-1, -1, 0.5);
+            sparkTrailParticles.direction2 = new BABYLON.Vector3(1, 1, 2);
+            sparkTrailParticles.minEmitPower = 4;
+            sparkTrailParticles.maxEmitPower = 10;
+            
+            // Gravity affects sparks
+            sparkTrailParticles.gravity = new BABYLON.Vector3(0, -3, 0);
+            
+            // Additive for bright glow
+            sparkTrailParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+            
+            sparkTrailParticles.start();
+            
+            // =====================
+            // CORE GLOW (Intense center glow)
+            // =====================
+            coreGlowParticles = new BABYLON.ParticleSystem('coreGlow', 100, scene);
+            
+            // Bright core texture
+            const coreTexture = new BABYLON.DynamicTexture('coreTex', 64, scene);
+            const coreCtx = coreTexture.getContext();
+            const coreGradient = coreCtx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            coreGradient.addColorStop(0, 'rgba(255,255,255,1)');
+            coreGradient.addColorStop(0.3, 'rgba(180,255,150,0.8)');
+            coreGradient.addColorStop(0.6, 'rgba(100,255,80,0.4)');
+            coreGradient.addColorStop(1, 'rgba(50,200,50,0)');
+            coreCtx.fillStyle = coreGradient;
+            coreCtx.fillRect(0, 0, 64, 64);
+            coreTexture.update();
+            
+            coreGlowParticles.particleTexture = coreTexture;
+            coreGlowParticles.emitter = ball;
+            
+            coreGlowParticles.minEmitBox = new BABYLON.Vector3(-0.05, -0.05, 0.2);
+            coreGlowParticles.maxEmitBox = new BABYLON.Vector3(0.05, 0.05, 0.25);
+            
+            // Bright white-green core
+            coreGlowParticles.color1 = new BABYLON.Color4(0.9, 1, 0.8, 0.9);
+            coreGlowParticles.color2 = new BABYLON.Color4(0.7, 1, 0.6, 0.8);
+            coreGlowParticles.colorDead = new BABYLON.Color4(0.3, 0.8, 0.3, 0);
+            
+            coreGlowParticles.minSize = 0.3;
+            coreGlowParticles.maxSize = 0.6;
+            
+            coreGlowParticles.minLifeTime = 0.05;
+            coreGlowParticles.maxLifeTime = 0.15;
+            coreGlowParticles.emitRate = 80;
+            
+            coreGlowParticles.direction1 = new BABYLON.Vector3(-0.1, -0.1, 0.3);
+            coreGlowParticles.direction2 = new BABYLON.Vector3(0.1, 0.1, 0.6);
+            coreGlowParticles.minEmitPower = 1;
+            coreGlowParticles.maxEmitPower = 2;
+            
+            coreGlowParticles.gravity = new BABYLON.Vector3(0, 0, 0);
+            coreGlowParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+            
+            coreGlowParticles.start();
+        }
+        
+        function updateTrailParticles(tunnelDir, speed) {
+            // Adjust particle emission based on speed
+            const speedMultiplier = speed / CONFIG.baseSpeed;
+            
+            if (fireTrailParticles) {
+                fireTrailParticles.emitRate = 150 * speedMultiplier;
+                fireTrailParticles.minEmitPower = 3 * speedMultiplier;
+                fireTrailParticles.maxEmitPower = 6 * speedMultiplier;
+                
+                // Update direction based on tunnel direction (particles go opposite to movement)
+                const backDir = tunnelDir.scale(-1);
+                fireTrailParticles.direction1 = new BABYLON.Vector3(
+                    backDir.x - 0.3, backDir.y - 0.3, backDir.z + 0.3
+                );
+                fireTrailParticles.direction2 = new BABYLON.Vector3(
+                    backDir.x + 0.3, backDir.y + 0.3, backDir.z + 1.0
+                );
+            }
+            
+            if (smokeTrailParticles) {
+                smokeTrailParticles.emitRate = 60 * speedMultiplier;
+                
+                const backDir = tunnelDir.scale(-0.5);
+                smokeTrailParticles.direction1 = new BABYLON.Vector3(
+                    backDir.x - 0.5, backDir.y - 0.3, backDir.z + 0.2
+                );
+                smokeTrailParticles.direction2 = new BABYLON.Vector3(
+                    backDir.x + 0.5, backDir.y + 0.5, backDir.z + 0.8
+                );
+            }
+            
+            if (sparkTrailParticles) {
+                sparkTrailParticles.emitRate = 40 * speedMultiplier;
+                sparkTrailParticles.minEmitPower = 4 * speedMultiplier;
+                sparkTrailParticles.maxEmitPower = 10 * speedMultiplier;
+            }
+            
+            if (coreGlowParticles) {
+                coreGlowParticles.emitRate = 60 * speedMultiplier;
+            }
+        }
+        
+        function stopTrailParticles() {
+            if (fireTrailParticles) fireTrailParticles.stop();
+            if (smokeTrailParticles) smokeTrailParticles.stop();
+            if (sparkTrailParticles) sparkTrailParticles.stop();
+            if (coreGlowParticles) coreGlowParticles.stop();
+        }
+        
+        function startTrailParticles() {
+            if (fireTrailParticles) fireTrailParticles.start();
+            if (smokeTrailParticles) smokeTrailParticles.start();
+            if (sparkTrailParticles) sparkTrailParticles.start();
+            if (coreGlowParticles) coreGlowParticles.start();
+        }
+
+        function createExplosionParticles() {
+            explosionParticles = new BABYLON.ParticleSystem('explosion', CONFIG.explosionParticles, scene);
+            
+            const particleTexture = new BABYLON.DynamicTexture('particleTex', 64, scene);
+            const ctx = particleTexture.getContext();
+            const gradient = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+            gradient.addColorStop(0, 'rgba(255,255,255,1)');
+            gradient.addColorStop(0.3, 'rgba(255,200,100,1)');
+            gradient.addColorStop(0.7, 'rgba(255,100,50,0.5)');
+            gradient.addColorStop(1, 'rgba(255,0,0,0)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, 64, 64);
+            particleTexture.update();
+            
+            explosionParticles.particleTexture = particleTexture;
+            explosionParticles.emitter = new BABYLON.Vector3(0, 0, 0);
+            explosionParticles.minEmitBox = new BABYLON.Vector3(-0.3, -0.3, -0.3);
+            explosionParticles.maxEmitBox = new BABYLON.Vector3(0.3, 0.3, 0.3);
+            
+            explosionParticles.color1 = new BABYLON.Color4(1, 0.8, 0.2, 1);
+            explosionParticles.color2 = new BABYLON.Color4(1, 0.2, 0, 1);
+            explosionParticles.colorDead = new BABYLON.Color4(0.3, 0, 0, 0);
+            
+            explosionParticles.minSize = 0.3;
+            explosionParticles.maxSize = 1.0;
+            explosionParticles.minLifeTime = 0.2;
+            explosionParticles.maxLifeTime = 0.8;
+            explosionParticles.emitRate = 0;
+            explosionParticles.manualEmitCount = 0;
+            explosionParticles.direction1 = new BABYLON.Vector3(-5, -5, -5);
+            explosionParticles.direction2 = new BABYLON.Vector3(5, 5, 5);
+            explosionParticles.minEmitPower = 8;
+            explosionParticles.maxEmitPower = 20;
+            explosionParticles.gravity = new BABYLON.Vector3(0, -8, 0);
+            explosionParticles.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD;
+            explosionParticles.start();
+        }
+
+        // Generate a dramatic event
+        function generateDramaticEvent() {
+            const eventType = Math.random();
+            
+            if (eventType < 0.4) {
+                return {
+                    angleHChange: (Math.random() - 0.5) * 0.2,
+                    angleVChange: CONFIG.dramaticDropStrength * (0.5 + Math.random() * 0.5)
+                };
+            } else if (eventType < 0.7) {
+                return {
+                    angleHChange: (Math.random() - 0.5) * 0.2,
+                    angleVChange: -CONFIG.dramaticDropStrength * (0.3 + Math.random() * 0.4)
+                };
+            } else if (eventType < 0.85) {
+                return {
+                    angleHChange: -CONFIG.dramaticCurveStrength * (0.5 + Math.random() * 0.5),
+                    angleVChange: (Math.random() - 0.5) * 0.2
+                };
+            } else {
+                return {
+                    angleHChange: CONFIG.dramaticCurveStrength * (0.5 + Math.random() * 0.5),
+                    angleVChange: (Math.random() - 0.5) * 0.2
+                };
+            }
+        }
+
+        // Catmull-Rom spline interpolation
+        function catmullRomSpline(p0, p1, p2, p3, t) {
+            const t2 = t * t;
+            const t3 = t2 * t;
+            
+            return {
+                x: 0.5 * ((2 * p1.x) + (-p0.x + p2.x) * t + (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 + (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
+                y: 0.5 * ((2 * p1.y) + (-p0.y + p2.y) * t + (2 * p0.y - 5 * p1.y + 4 * p2.y - p3.y) * t2 + (-p0.y + 3 * p1.y - 3 * p2.y + p3.y) * t3),
+                z: 0.5 * ((2 * p1.z) + (-p0.z + p2.z) * t + (2 * p0.z - 5 * p1.z + 4 * p2.z - p3.z) * t2 + (-p0.z + 3 * p1.z - 3 * p2.z + p3.z) * t3)
+            };
+        }
+
+        // Generate smooth path from control points
+        function generateSmoothPath() {
+            gameState.smoothedPath = [];
+            const controlPoints = gameState.tunnelPath;
+            
+            if (controlPoints.length < 4) return;
+            
+            for (let i = 0; i < controlPoints.length - 1; i++) {
+                const p0 = controlPoints[Math.max(0, i - 1)];
+                const p1 = controlPoints[i];
+                const p2 = controlPoints[Math.min(controlPoints.length - 1, i + 1)];
+                const p3 = controlPoints[Math.min(controlPoints.length - 1, i + 2)];
+                
+                const subdivisions = CONFIG.pathSubdivisions;
+                for (let j = 0; j < subdivisions; j++) {
+                    const t = j / subdivisions;
+                    const point = catmullRomSpline(p0, p1, p2, p3, t);
+                    point.segmentIndex = i;
+                    point.localT = t;
+                    gameState.smoothedPath.push(point);
+                }
+            }
+            
+            const lastPoint = controlPoints[controlPoints.length - 1];
+            gameState.smoothedPath.push({
+                x: lastPoint.x,
+                y: lastPoint.y,
+                z: lastPoint.z,
+                segmentIndex: controlPoints.length - 1,
+                localT: 0
+            });
+        }
+
+        // Get smooth position and direction
+        function getSmoothPathData(distance) {
+            const totalSegmentLength = CONFIG.tunnelSegmentLength;
+            const smoothPointsPerSegment = CONFIG.pathSubdivisions;
+            const smoothPointLength = totalSegmentLength / smoothPointsPerSegment;
+            
+            const smoothIndex = distance / smoothPointLength;
+            const baseIndex = Math.floor(smoothIndex);
+            const t = smoothIndex - baseIndex;
+            
+            if (baseIndex < 0 || baseIndex >= gameState.smoothedPath.length - 1) {
+                const segIndex = Math.floor(distance / totalSegmentLength);
+                const segT = (distance % totalSegmentLength) / totalSegmentLength;
+                const pathIndex = segIndex + CONFIG.tunnelSegmentsBehind;
+                
+                if (pathIndex >= 0 && pathIndex < gameState.tunnelPath.length - 1) {
+                    const p1 = gameState.tunnelPath[pathIndex];
+                    const p2 = gameState.tunnelPath[pathIndex + 1];
+                    return {
+                        position: new BABYLON.Vector3(
+                            p1.x + (p2.x - p1.x) * segT,
+                            p1.y + (p2.y - p1.y) * segT,
+                            p1.z + (p2.z - p1.z) * segT
+                        ),
+                        direction: new BABYLON.Vector3(
+                            p2.x - p1.x,
+                            p2.y - p1.y,
+                            p2.z - p1.z
+                        ).normalize()
+                    };
+                }
+                return null;
+            }
+            
+            const p1 = gameState.smoothedPath[baseIndex];
+            const p2 = gameState.smoothedPath[Math.min(baseIndex + 1, gameState.smoothedPath.length - 1)];
+            const p3 = gameState.smoothedPath[Math.min(baseIndex + 2, gameState.smoothedPath.length - 1)];
+            
+            const position = new BABYLON.Vector3(
+                p1.x + (p2.x - p1.x) * t,
+                p1.y + (p2.y - p1.y) * t,
+                p1.z + (p2.z - p1.z) * t
+            );
+            
+            const direction = new BABYLON.Vector3(
+                p3.x - p1.x,
+                p3.y - p1.y,
+                p3.z - p1.z
+            ).normalize();
+            
+            return { position, direction };
+        }
+
+        function initializeTunnelPath() {
+            gameState.tunnelPath = [];
+            let currentPos = { x: 0, y: 0, z: 0 };
+            let currentAngleH = 0;
+            let currentAngleV = 0;
+            
+            for (let i = 0; i < CONFIG.tunnelSegmentsAhead + CONFIG.tunnelSegmentsBehind + 100; i++) {
+                gameState.tunnelPath.push({ 
+                    x: currentPos.x, 
+                    y: currentPos.y, 
+                    z: currentPos.z,
+                    angleH: currentAngleH,
+                    angleV: currentAngleV
+                });
+                
+                currentPos.z += CONFIG.tunnelSegmentLength * Math.cos(currentAngleH) * Math.cos(currentAngleV);
+                currentPos.x += CONFIG.tunnelSegmentLength * Math.sin(currentAngleH);
+                currentPos.y += CONFIG.tunnelSegmentLength * Math.sin(currentAngleV);
+                
+                if (i > 5) {
+                    if (Math.random() < CONFIG.dramaticEventChance) {
+                        const event = generateDramaticEvent();
+                        currentAngleH += event.angleHChange;
+                        currentAngleV += event.angleVChange;
+                    } else {
+                        currentAngleH += (Math.random() - 0.5) * CONFIG.tunnelBendHorizontal;
+                        currentAngleV += (Math.random() - 0.5) * CONFIG.tunnelBendVertical;
+                    }
+                    
+                    currentAngleH = Math.max(-CONFIG.tunnelMaxAngleH, Math.min(CONFIG.tunnelMaxAngleH, currentAngleH));
+                    currentAngleV = Math.max(-CONFIG.tunnelMaxAngleV, Math.min(CONFIG.tunnelMaxAngleV, currentAngleV));
+                    
+                    currentAngleH *= 0.95;
+                    currentAngleV *= 0.92;
+                }
+            }
+            
+            generateSmoothPath();
+        }
+
+        function extendTunnelPath() {
+            const lastPoint = gameState.tunnelPath[gameState.tunnelPath.length - 1];
+            
+            let angleH, angleV;
+            
+            if (Math.random() < CONFIG.dramaticEventChance) {
+                const event = generateDramaticEvent();
+                angleH = lastPoint.angleH + event.angleHChange;
+                angleV = lastPoint.angleV + event.angleVChange;
+            } else {
+                angleH = lastPoint.angleH + (Math.random() - 0.5) * CONFIG.tunnelBendHorizontal;
+                angleV = lastPoint.angleV + (Math.random() - 0.5) * CONFIG.tunnelBendVertical;
+            }
+            
+            angleH = Math.max(-CONFIG.tunnelMaxAngleH, Math.min(CONFIG.tunnelMaxAngleH, angleH));
+            angleV = Math.max(-CONFIG.tunnelMaxAngleV, Math.min(CONFIG.tunnelMaxAngleV, angleV));
+            
+            angleH *= 0.95;
+            angleV *= 0.92;
+            
+            const newPoint = {
+                x: lastPoint.x + CONFIG.tunnelSegmentLength * Math.sin(angleH),
+                y: lastPoint.y + CONFIG.tunnelSegmentLength * Math.sin(angleV),
+                z: lastPoint.z + CONFIG.tunnelSegmentLength * Math.cos(angleH) * Math.cos(angleV),
+                angleH: angleH,
+                angleV: angleV
+            };
+            
+            gameState.tunnelPath.push(newPoint);
+            generateSmoothPath();
+        }
+
+        function getRotationBetweenVectors(from, to) {
+            const dot = BABYLON.Vector3.Dot(from, to);
+            
+            if (dot > 0.9999) {
+                return BABYLON.Quaternion.Identity();
+            }
+            
+            if (dot < -0.9999) {
+                let perpendicular = BABYLON.Vector3.Cross(from, BABYLON.Axis.X);
+                if (perpendicular.length() < 0.001) {
+                    perpendicular = BABYLON.Vector3.Cross(from, BABYLON.Axis.Z);
+                }
+                perpendicular.normalize();
+                return BABYLON.Quaternion.RotationAxis(perpendicular, Math.PI);
+            }
+            
+            const axis = BABYLON.Vector3.Cross(from, to);
+            axis.normalize();
+            const angle = Math.acos(Math.max(-1, Math.min(1, dot)));
+            
+            return BABYLON.Quaternion.RotationAxis(axis, angle);
+        }
+
+        function createTunnelSegment(segmentIndex) {
+            const pathIndex = segmentIndex + CONFIG.tunnelSegmentsBehind;
+            
+            if (pathIndex < 0 || pathIndex >= gameState.tunnelPath.length - 1) return null;
+            
+            const p0 = gameState.tunnelPath[Math.max(0, pathIndex - 1)];
+            const p1 = gameState.tunnelPath[pathIndex];
+            const p2 = gameState.tunnelPath[pathIndex + 1];
+            const p3 = gameState.tunnelPath[Math.min(gameState.tunnelPath.length - 1, pathIndex + 2)];
+            
+            const segmentGroup = { meshes: [], obstacles: [], index: segmentIndex, pathIndex: pathIndex };
+            
+            const pathPoints = [];
+            const numPoints = CONFIG.pathSubdivisions;
+            
+            for (let i = 0; i <= numPoints; i++) {
+                const t = i / numPoints;
+                const point = catmullRomSpline(p0, p1, p2, p3, t);
+                pathPoints.push(new BABYLON.Vector3(point.x, point.y, point.z));
+            }
+            
+            const midPoint = catmullRomSpline(p0, p1, p2, p3, 0.5);
+            const midPointNext = catmullRomSpline(p0, p1, p2, p3, 0.52);
+            const dir = new BABYLON.Vector3(
+                midPointNext.x - midPoint.x,
+                midPointNext.y - midPoint.y,
+                midPointNext.z - midPoint.z
+            ).normalize();
+            
+            const tube = BABYLON.MeshBuilder.CreateTube('tunnel_' + segmentIndex, {
+                path: pathPoints,
+                radius: CONFIG.tunnelRadius,
+                tessellation: 48,
+                sideOrientation: BABYLON.Mesh.BACKSIDE,
+                updatable: false,
+                cap: BABYLON.Mesh.NO_CAP
+            }, scene);
+            
+            const tubeMat = new BABYLON.StandardMaterial('tubeMat_' + segmentIndex, scene);
+            const hue = ((segmentIndex * 12) % 360);
+            const color = BABYLON.Color3.FromHSV(hue, 0.5, 0.4);
+            tubeMat.diffuseColor = color;
+            tubeMat.emissiveColor = color.scale(0.15);
+            tubeMat.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+            tube.material = tubeMat;
+            
+            segmentGroup.meshes.push(tube);
+            
+            const numRings = 5;
+            for (let r = 0; r < numRings; r++) {
+                const t = (r + 0.5) / numRings;
+                const ringPoint = catmullRomSpline(p0, p1, p2, p3, t);
+                const ringPointNext = catmullRomSpline(p0, p1, p2, p3, Math.min(1, t + 0.05));
+                
+                const ringPos = new BABYLON.Vector3(ringPoint.x, ringPoint.y, ringPoint.z);
+                const ringDir = new BABYLON.Vector3(
+                    ringPointNext.x - ringPoint.x,
+                    ringPointNext.y - ringPoint.y,
+                    ringPointNext.z - ringPoint.z
+                ).normalize();
+                
+                const ring = BABYLON.MeshBuilder.CreateTorus('ring_' + segmentIndex + '_' + r, {
+                    diameter: CONFIG.tunnelRadius * 2 - 0.15,
+                    thickness: 0.12,
+                    tessellation: 48
+                }, scene);
+                
+                ring.position = ringPos;
+                
+                const baseRotation = BABYLON.Quaternion.RotationAxis(BABYLON.Axis.X, Math.PI / 2);
+                const alignRotation = getRotationBetweenVectors(BABYLON.Axis.Z, ringDir);
+                ring.rotationQuaternion = alignRotation.multiply(baseRotation);
+                
+                const ringMat = new BABYLON.StandardMaterial('ringMat_' + segmentIndex + '_' + r, scene);
+                const ringHue = ((segmentIndex * 12 + r * 15 + 180) % 360);
+                const ringColor = BABYLON.Color3.FromHSV(ringHue, 0.9, 1.0);
+                ringMat.diffuseColor = ringColor;
+                ringMat.emissiveColor = ringColor.scale(0.7);
+                ring.material = ringMat;
+                
+                glowLayer.addIncludedOnlyMesh(ring);
+                segmentGroup.meshes.push(ring);
+            }
+            
+            const numGuideLines = 8;
+            const guideStartT = CONFIG.guideLineStartT;
+            const guideEndT = CONFIG.guideLineEndT;
+            const guideNumPoints = Math.floor(numPoints * (guideEndT - guideStartT));
+            
+            for (let g = 0; g < numGuideLines; g++) {
+                const guideAngle = (g / numGuideLines) * Math.PI * 2;
+                
+                const guidePoints = [];
+                for (let i = 0; i <= guideNumPoints; i++) {
+                    const t = guideStartT + (i / guideNumPoints) * (guideEndT - guideStartT);
+                    const point = catmullRomSpline(p0, p1, p2, p3, t);
+                    const pointNext = catmullRomSpline(p0, p1, p2, p3, Math.min(1, t + 0.02));
+                    
+                    const centerPos = new BABYLON.Vector3(point.x, point.y, point.z);
+                    const localDir = new BABYLON.Vector3(
+                        pointNext.x - point.x,
+                        pointNext.y - point.y,
+                        pointNext.z - point.z
+                    ).normalize();
+                    
+                    let right = BABYLON.Vector3.Cross(localDir, BABYLON.Axis.Y);
+                    if (right.length() < 0.001) {
+                        right = BABYLON.Vector3.Cross(localDir, BABYLON.Axis.X);
+                    }
+                    right.normalize();
+                    const up = BABYLON.Vector3.Cross(right, localDir).normalize();
+                    
+                    const guideRadius = CONFIG.tunnelRadius - 0.15;
+                    const offset = right.scale(Math.sin(guideAngle) * guideRadius)
+                        .add(up.scale(Math.cos(guideAngle) * guideRadius));
+                    
+                    guidePoints.push(centerPos.add(offset));
+                }
+                
+                if (guidePoints.length >= 2) {
+                    const guideLine = BABYLON.MeshBuilder.CreateTube('guide_' + segmentIndex + '_' + g, {
+                        path: guidePoints,
+                        radius: 0.04,
+                        tessellation: 8,
+                        updatable: false,
+                        cap: BABYLON.Mesh.NO_CAP
+                    }, scene);
+                    
+                    const guideMat = new BABYLON.StandardMaterial('guideMat_' + segmentIndex + '_' + g, scene);
+                    const guideHue = ((segmentIndex * 12 + g * 45) % 360);
+                    guideMat.emissiveColor = BABYLON.Color3.FromHSV(guideHue, 0.6, 0.35);
+                    guideMat.diffuseColor = BABYLON.Color3.FromHSV(guideHue, 0.6, 0.25);
+                    guideLine.material = guideMat;
+                    
+                    segmentGroup.meshes.push(guideLine);
+                }
+            }
+            
+            if (segmentIndex > 3 && Math.random() < CONFIG.obstacleFrequency) {
+                const numObstacles = CONFIG.minObstaclesPerSegment + 
+                    Math.floor(Math.random() * (CONFIG.maxObstaclesPerSegment - CONFIG.minObstaclesPerSegment + 1));
+                
+                for (let o = 0; o < numObstacles; o++) {
+                    createObstacle(segmentGroup, p0, p1, p2, p3, segmentIndex, o);
+                }
+            }
+            
+            tunnelSegments.push(segmentGroup);
+            return segmentGroup;
+        }
+
+        function createObstacle(segmentGroup, p0, p1, p2, p3, segmentIndex, obstacleIndex) {
+            const t = 0.1 + Math.random() * 0.8;
+            const point = catmullRomSpline(p0, p1, p2, p3, t);
+            const pointNext = catmullRomSpline(p0, p1, p2, p3, Math.min(1, t + 0.02));
+            
+            const basePos = new BABYLON.Vector3(point.x, point.y, point.z);
+            const dir = new BABYLON.Vector3(
+                pointNext.x - point.x,
+                pointNext.y - point.y,
+                pointNext.z - point.z
+            ).normalize();
+            
+            let right = BABYLON.Vector3.Cross(dir, BABYLON.Axis.Y);
+            if (right.length() < 0.001) {
+                right = BABYLON.Vector3.Cross(dir, BABYLON.Axis.X);
+            }
+            right.normalize();
+            const up = BABYLON.Vector3.Cross(right, dir).normalize();
+            
+            const obstacleAngle = Math.random() * Math.PI * 2;
+            const obstacleRadius = CONFIG.tunnelRadius - 0.8 - Math.random() * 0.8;
+            
+            const cubeSize = 0.8 + Math.random() * 0.6;
+            const cube = BABYLON.MeshBuilder.CreateBox('obstacle_' + segmentIndex + '_' + obstacleIndex, { 
+                size: cubeSize 
+            }, scene);
+            
+            const offset = right.scale(Math.sin(obstacleAngle) * obstacleRadius)
+                .add(up.scale(Math.cos(obstacleAngle) * obstacleRadius));
+            
+            cube.position = basePos.add(offset);
+            cube.rotation = new BABYLON.Vector3(
+                Math.random() * Math.PI,
+                Math.random() * Math.PI,
+                Math.random() * Math.PI
+            );
+            
+            const cubeMat = new BABYLON.StandardMaterial('obsMat_' + segmentIndex + '_' + obstacleIndex, scene);
+            cubeMat.diffuseColor = new BABYLON.Color3(1, 0.1, 0.05);
+            cubeMat.emissiveColor = new BABYLON.Color3(0.7, 0.03, 0.01);
+            cubeMat.specularColor = new BABYLON.Color3(1, 0.4, 0.4);
+            cube.material = cubeMat;
+            
+            glowLayer.addIncludedOnlyMesh(cube);
+            
+            cube.cubeSize = cubeSize;
+            cube.obstacleAngle = obstacleAngle;
+            cube.obstacleT = t;
+            cube.obstacleRadius = obstacleRadius;
+            
+            segmentGroup.meshes.push(cube);
+            segmentGroup.obstacles.push(cube);
+            obstacles.push(cube);
+        }
+
+        function removeTunnelSegment(segmentGroup) {
+            if (!segmentGroup) return;
+            
+            segmentGroup.meshes.forEach(mesh => {
+                if (mesh && !mesh.isDisposed()) {
+                    glowLayer.removeIncludedOnlyMesh(mesh);
+                    mesh.dispose();
+                }
+            });
+            
+            segmentGroup.obstacles.forEach(obs => {
+                const idx = obstacles.indexOf(obs);
+                if (idx > -1) obstacles.splice(idx, 1);
+            });
+        }
+
+        // ============================================
+        // INPUT HANDLING
+        // ============================================
+        
+        function handleKeyDown(event) {
+            if (gameState.isGameOver) return;
+            
+            switch(event.code) {
+                case 'KeyA':
+                case 'ArrowLeft':
+                    keys.left = true;
+                    event.preventDefault();
+                    break;
+                case 'KeyD':
+                case 'ArrowRight':
+                    keys.right = true;
+                    event.preventDefault();
+                    break;
+                case 'Space':
+                    keys.jump = true;
+                    event.preventDefault();
+                    break;
+            }
+        }
+        
+        function handleKeyUp(event) {
+            switch(event.code) {
+                case 'KeyA':
+                case 'ArrowLeft':
+                    keys.left = false;
+                    break;
+                case 'KeyD':
+                case 'ArrowRight':
+                    keys.right = false;
+                    break;
+                case 'Space':
+                    keys.jump = false;
+                    break;
+            }
+        }
+
+        // ============================================
+        // GAME LOOP
+        // ============================================
+        
+        function updateGame() {
+            const dt = Math.min(engine.getDeltaTime() / 1000, 0.05) * 60;
+            
+            gameState.speed = Math.min(CONFIG.maxSpeed, gameState.speed + CONFIG.speedIncrement * dt);
+            
+            gameState.distance += gameState.speed * dt;
+            gameState.score = Math.floor(gameState.distance * 10);
+            
+            const segmentIndex = Math.floor(gameState.distance / CONFIG.tunnelSegmentLength);
+            const segmentT = (gameState.distance % CONFIG.tunnelSegmentLength) / CONFIG.tunnelSegmentLength;
+            const pathIndex = segmentIndex + CONFIG.tunnelSegmentsBehind;
+            
+            while (gameState.tunnelPath.length < pathIndex + CONFIG.tunnelSegmentsAhead + 10) {
+                extendTunnelPath();
+            }
+            
+            if (pathIndex >= 0 && pathIndex < gameState.tunnelPath.length - 1) {
+                const pathData = getSmoothPathData(gameState.distance);
+                
+                if (!pathData) return;
+                
+                const tunnelCenter = pathData.position;
+                const tunnelDir = pathData.direction;
+                
+                // Store tunnel direction for particle updates
+                gameState.currentTunnelDir = tunnelDir.clone();
+                
+                let right = BABYLON.Vector3.Cross(tunnelDir, BABYLON.Axis.Y);
+                if (right.length() < 0.001) {
+                    right = BABYLON.Vector3.Cross(tunnelDir, BABYLON.Axis.X);
+                }
+                right.normalize();
+                const up = BABYLON.Vector3.Cross(right, tunnelDir).normalize();
+                
+                // Angular physics
+                if (keys.left) {
+                    gameState.angularVelocity -= CONFIG.angularAcceleration * dt;
+                }
+                if (keys.right) {
+                    gameState.angularVelocity += CONFIG.angularAcceleration * dt;
+                }
+                
+                if (gameState.isGrounded) {
+                    const gravityForce = CONFIG.angularGravity * Math.sin(gameState.theta) * dt;
+                    gameState.angularVelocity += gravityForce;
+                }
+                
+                if (!keys.left && !keys.right) {
+                    gameState.angularVelocity *= CONFIG.angularFriction;
+                }
+                
+                gameState.angularVelocity = Math.max(-CONFIG.angularMaxSpeed, 
+                    Math.min(CONFIG.angularMaxSpeed, gameState.angularVelocity));
+                
+                gameState.theta += gameState.angularVelocity * dt;
+                
+                while (gameState.theta < 0) gameState.theta += Math.PI * 2;
+                while (gameState.theta >= Math.PI * 2) gameState.theta -= Math.PI * 2;
+                
+                // Radial physics
+                const surfaceRadius = CONFIG.tunnelRadius - CONFIG.ballRadius;
+                
+                if (keys.jump && gameState.isGrounded) {
+                    gameState.radialVelocity = -CONFIG.jumpForce;
+                    gameState.isGrounded = false;
+                }
+                
+                if (!gameState.isGrounded) {
+                    gameState.radialVelocity += CONFIG.radialGravity * dt;
+                }
+                
+                gameState.radialPosition += gameState.radialVelocity * dt;
+                
+                if (gameState.radialPosition >= surfaceRadius) {
+                    gameState.radialPosition = surfaceRadius;
+                    gameState.radialVelocity = 0;
+                    gameState.isGrounded = true;
+                }
+                
+                if (gameState.radialPosition < CONFIG.ballRadius) {
+                    gameState.radialPosition = CONFIG.ballRadius;
+                    gameState.radialVelocity = Math.abs(gameState.radialVelocity) * 0.5;
+                }
+                
+                // Ball world position
+                const localX = Math.sin(gameState.theta) * gameState.radialPosition;
+                const localY = Math.cos(gameState.theta) * gameState.radialPosition;
+                
+                const ballWorldPos = tunnelCenter
+                    .add(right.scale(localX))
+                    .add(up.scale(localY))
+                    .subtract(tunnelDir.scale(CONFIG.ballXOffset));
+                
+                ball.position = ballWorldPos;
+                
+                // Ball rotation
+                const forwardRollSpeed = gameState.speed * 0.2 * dt;
+                gameState.ballRotationX += forwardRollSpeed;
+                
+                const sideRollSpeed = gameState.angularVelocity * gameState.radialPosition * 0.5 * dt;
+                gameState.ballRotationZ -= sideRollSpeed;
+                
+                const surfaceNormal = right.scale(Math.sin(gameState.theta))
+                    .add(up.scale(Math.cos(gameState.theta))).normalize();
+                
+                const ballForward = tunnelDir.clone();
+                const ballRight = BABYLON.Vector3.Cross(surfaceNormal, ballForward).normalize();
+                const ballUp = surfaceNormal;
+                
+                const rotMatrix = BABYLON.Matrix.Identity();
+                rotMatrix.setRowFromFloats(0, ballRight.x, ballRight.y, ballRight.z, 0);
+                rotMatrix.setRowFromFloats(1, ballUp.x, ballUp.y, ballUp.z, 0);
+                rotMatrix.setRowFromFloats(2, ballForward.x, ballForward.y, ballForward.z, 0);
+                
+                const baseRotation = BABYLON.Quaternion.FromRotationMatrix(rotMatrix);
+                
+                const rollRotation = BABYLON.Quaternion.RotationYawPitchRoll(
+                    0,
+                    gameState.ballRotationX,
+                    gameState.ballRotationZ
+                );
+                
+                ball.rotationQuaternion = baseRotation.multiply(rollRotation);
+                
+                // Update trail particles
+                updateTrailParticles(tunnelDir, gameState.speed);
+                
+                // Camera
+                const cameraDistance = CONFIG.ballXOffset;
+                const cameraHeight = 2.5;
+                const cameraSideOffset = Math.sin(gameState.theta) * 2.5;
+                
+                const targetCameraPos = tunnelCenter
+                    .subtract(tunnelDir.scale(cameraDistance))
+                    .add(up.scale(cameraHeight + Math.cos(gameState.theta) * 1.5))
+                    .add(right.scale(cameraSideOffset * 0.5));
+                
+                const lookAheadData = getSmoothPathData(gameState.distance + CONFIG.cameraLookAheadDistance);
+                const targetLookAt = lookAheadData ? lookAheadData.position : ballWorldPos.add(tunnelDir.scale(CONFIG.cameraLookAheadDistance));
+                
+                if (!gameState.smoothedCameraPos) {
+                    gameState.smoothedCameraPos = targetCameraPos.clone();
+                    gameState.smoothedCameraTarget = targetLookAt.clone();
+                    gameState.smoothedUp = up.clone();
+                }
+                
+                const posSmoothing = CONFIG.cameraPositionSmoothing * dt;
+                gameState.smoothedCameraPos = BABYLON.Vector3.Lerp(
+                    gameState.smoothedCameraPos, 
+                    targetCameraPos, 
+                    Math.min(posSmoothing, 1)
+                );
+                
+                const targetSmoothing = CONFIG.cameraTargetSmoothing * dt;
+                gameState.smoothedCameraTarget = BABYLON.Vector3.Lerp(
+                    gameState.smoothedCameraTarget, 
+                    targetLookAt, 
+                    Math.min(targetSmoothing, 1)
+                );
+                
+                gameState.smoothedUp = BABYLON.Vector3.Lerp(
+                    gameState.smoothedUp,
+                    up,
+                    Math.min(0.02 * dt, 1)
+                ).normalize();
+                
+                camera.position = gameState.smoothedCameraPos;
+                camera.setTarget(gameState.smoothedCameraTarget);
+                camera.upVector = gameState.smoothedUp;
+                
+                // Update lights
+                const pointLight = scene.getLightByName('pointLight');
+                if (pointLight) {
+                    const lightTarget = tunnelCenter.add(tunnelDir.scale(25));
+                    pointLight.position = BABYLON.Vector3.Lerp(pointLight.position, lightTarget, 0.05);
+                }
+                
+                const ballLight = scene.getLightByName('ballLight');
+                if (ballLight) {
+                    ballLight.position = ballWorldPos;
+                }
+                
+                // Update trail light position (slightly behind ball)
+                const trailLight = scene.getLightByName('trailLight');
+                if (trailLight) {
+                    trailLight.position = ballWorldPos.add(tunnelDir.scale(1.5));
+                }
+                
+                const rearLight = scene.getLightByName('rearLight');
+                if (rearLight) {
+                    const rearTarget = tunnelCenter.subtract(tunnelDir.scale(15));
+                    rearLight.position = BABYLON.Vector3.Lerp(rearLight.position, rearTarget, 0.05);
+                }
+                
+                // Tunnel segment management
+                if (segmentIndex > gameState.currentSegmentIndex) {
+                    const deletionThreshold = segmentIndex - CONFIG.tunnelSegmentsBehind - CONFIG.tunnelSegmentsDeletionBuffer;
+                    
+                    while (tunnelSegments.length > 0 && tunnelSegments[0].index < deletionThreshold) {
+                        removeTunnelSegment(tunnelSegments.shift());
+                    }
+                    
+                    const neededIndex = segmentIndex + CONFIG.tunnelSegmentsAhead - 1;
+                    createTunnelSegment(neededIndex);
+                    
+                    gameState.currentSegmentIndex = segmentIndex;
+                }
+                
+                checkCollisions(ballWorldPos, tunnelCenter, right, up, segmentT);
+            }
+            
+            updateUI();
+        }
+
+        function checkCollisions(ballPos, tunnelCenter, right, up, segmentT) {
+            for (const obstacle of obstacles) {
+                if (!obstacle || obstacle.isDisposed()) continue;
+                
+                const obsPos = obstacle.position;
+                const distance = BABYLON.Vector3.Distance(ballPos, obsPos);
+                
+                const collisionDist = CONFIG.ballRadius + (obstacle.cubeSize || 0.6) * 0.5;
+                
+                if (distance < collisionDist) {
+                    triggerExplosion(ballPos);
+                    return;
+                }
+            }
+        }
+
+        function triggerExplosion(position) {
+            gameState.isGameOver = true;
+            
+            // Stop trail particles
+            stopTrailParticles();
+            
+            ball.visibility = 0;
+            glowLayer.removeIncludedOnlyMesh(ball);
+            
+            explosionParticles.emitter = position.clone();
+            explosionParticles.manualEmitCount = CONFIG.explosionParticles;
+            
+            const originalClear = scene.clearColor.clone();
+            scene.clearColor = new BABYLON.Color4(1, 0.3, 0, 1);
+            setTimeout(() => {
+                scene.clearColor = originalClear;
+            }, 100);
+            
+            const originalPos = camera.position.clone();
+            let shakeTime = 0;
+            const shakeInterval = setInterval(() => {
+                shakeTime += 50;
+                if (shakeTime > 500) {
+                    clearInterval(shakeInterval);
+                    return;
+                }
+                const intensity = (500 - shakeTime) / 500;
+                camera.position.x = originalPos.x + (Math.random() - 0.5) * intensity * 2;
+                camera.position.y = originalPos.y + (Math.random() - 0.5) * intensity * 2;
+            }, 50);
+            
+            setTimeout(() => {
+                showGameOver();
+            }, 1500);
+        }
+
+        function updateUI() {
+            scoreElement.textContent = gameState.score.toLocaleString();
+            distanceElement.textContent = Math.floor(gameState.distance);
+            speedElement.textContent = gameState.speed.toFixed(2);
+        }
+
+        function showGameOver() {
+            finalScoreElement.textContent = gameState.score.toLocaleString();
+            finalDistanceElement.textContent = Math.floor(gameState.distance);
+            gameOverElement.style.display = 'block';
+        }
+
+        // ============================================
+        // GAME CONTROL
+        // ============================================
+        
+        function startGame() {
+            startScreen.style.display = 'none';
+            resetGame();
+            gameState.isRunning = true;
+        }
+
+        function restartGame() {
+            gameOverElement.style.display = 'none';
+            resetGame();
+            gameState.isRunning = true;
+        }
+
+        function resetGame() {
+            keys.left = false;
+            keys.right = false;
+            keys.jump = false;
+            
+            gameState.isGameOver = false;
+            gameState.score = 0;
+            gameState.distance = 0;
+            gameState.speed = CONFIG.baseSpeed;
+            gameState.theta = Math.PI;
+            gameState.angularVelocity = 0;
+            gameState.radialPosition = CONFIG.tunnelRadius - CONFIG.ballRadius;
+            gameState.radialVelocity = 0;
+            gameState.isGrounded = true;
+            gameState.ballRotationX = 0;
+            gameState.ballRotationZ = 0;
+            gameState.currentSegmentIndex = 0;
+            gameState.currentTunnelDir = new BABYLON.Vector3(0, 0, 1);
+            
+            gameState.smoothedCameraPos = null;
+            gameState.smoothedCameraTarget = null;
+            gameState.smoothedUp = null;
+            
+            tunnelSegments.forEach(seg => removeTunnelSegment(seg));
+            tunnelSegments = [];
+            obstacles = [];
+            
+            initializeTunnelPath();
+            
+            for (let i = -CONFIG.tunnelSegmentsBehind; i < CONFIG.tunnelSegmentsAhead; i++) {
+                createTunnelSegment(i);
+            }
+            
+            // Reset and restart trail particles
+            startTrailParticles();
+            
+            ball.visibility = 1;
+            ball.rotationQuaternion = BABYLON.Quaternion.Identity();
+            glowLayer.addIncludedOnlyMesh(ball);
+            
+            camera.position = new BABYLON.Vector3(0, 3, -CONFIG.ballXOffset);
+            camera.setTarget(new BABYLON.Vector3(0, 0, 10));
+            camera.upVector = BABYLON.Vector3.Up();
+            
+            updateUI();
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

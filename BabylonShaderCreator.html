@@ -1,0 +1,2165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Babylon.js Shader Editor with AI</title>
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Properties Panel Styles */
+        .properties-panel {
+            width: 280px;
+            background: #16213e;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #0f3460;
+            overflow: hidden;
+        }
+
+        .properties-header {
+            background: #0f3460;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .properties-header h2 {
+            font-size: 16px;
+            color: #00ff88;
+        }
+
+        .properties-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .property-section {
+            background: #0d1b2a;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+
+        .property-section-header {
+            background: #1a1a2e;
+            padding: 10px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #e94560;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+        }
+
+        .property-section-header:hover {
+            background: #252545;
+        }
+
+        .property-section-header .toggle-icon {
+            transition: transform 0.3s;
+        }
+
+        .property-section-header.collapsed .toggle-icon {
+            transform: rotate(-90deg);
+        }
+
+        .property-section-content {
+            padding: 10px;
+        }
+
+        .property-section-content.hidden {
+            display: none;
+        }
+
+        .property-item {
+            margin-bottom: 12px;
+        }
+
+        .property-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .property-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: #8899aa;
+            margin-bottom: 5px;
+        }
+
+        .property-label span {
+            color: #00ff88;
+            font-family: 'Consolas', monospace;
+        }
+
+        .property-value {
+            font-size: 10px;
+            color: #4a6fa5;
+            min-width: 50px;
+            text-align: right;
+        }
+
+        .property-control {
+            width: 100%;
+        }
+
+        .property-slider {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #1a1a2e;
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        .property-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #e94560;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .property-slider::-webkit-slider-thumb:hover {
+            background: #ff6b6b;
+        }
+
+        .property-slider::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+            background: #e94560;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+        }
+
+        .property-color {
+            width: 100%;
+            height: 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #1a1a2e;
+            padding: 2px;
+        }
+
+        .property-color::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .property-color::-webkit-color-swatch {
+            border: none;
+            border-radius: 3px;
+        }
+
+        .property-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #e94560;
+        }
+
+        .property-vec {
+            display: flex;
+            gap: 5px;
+        }
+
+        .property-vec input {
+            flex: 1;
+            min-width: 0;
+            background: #1a1a2e;
+            border: 1px solid #0f3460;
+            border-radius: 4px;
+            color: #00ff88;
+            padding: 5px;
+            font-size: 11px;
+            text-align: center;
+        }
+
+        .property-vec input:focus {
+            border-color: #e94560;
+            outline: none;
+        }
+
+        .property-vec-label {
+            font-size: 9px;
+            color: #4a6fa5;
+            text-align: center;
+            margin-top: 2px;
+        }
+
+        .property-vec-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .add-uniform-section {
+            background: #0d1b2a;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 10px;
+        }
+
+        .add-uniform-title {
+            font-size: 12px;
+            color: #e94560;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .add-uniform-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .add-uniform-input {
+            flex: 1;
+            background: #1a1a2e;
+            border: 1px solid #0f3460;
+            border-radius: 4px;
+            color: #00ff88;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .add-uniform-input:focus {
+            border-color: #e94560;
+            outline: none;
+        }
+
+        .add-uniform-select {
+            background: #1a1a2e;
+            border: 1px solid #0f3460;
+            border-radius: 4px;
+            color: #00ff88;
+            padding: 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .add-uniform-btn {
+            background: #00ff88;
+            color: #0d1b2a;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .add-uniform-btn:hover {
+            background: #00cc6a;
+        }
+
+        .no-properties {
+            text-align: center;
+            color: #4a6fa5;
+            font-size: 12px;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .delete-uniform-btn {
+            background: transparent;
+            border: none;
+            color: #ff6b6b;
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 5px;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+        }
+
+        .delete-uniform-btn:hover {
+            opacity: 1;
+        }
+
+        .canvas-container {
+            flex: 1;
+            position: relative;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .editor-container {
+            width: 450px;
+            background: #16213e;
+            display: flex;
+            flex-direction: column;
+            border-left: 2px solid #0f3460;
+        }
+
+        .editor-header {
+            background: #0f3460;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .editor-header h2 {
+            font-size: 16px;
+            color: #e94560;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        #applyButton {
+            background: #e94560;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        #applyButton:hover {
+            background: #ff6b6b;
+        }
+
+        #fixButton {
+            background: #ffa500;
+            color: #1a1a2e;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s;
+            display: none;
+        }
+
+        #fixButton:hover {
+            background: #ffcc00;
+        }
+
+        #fixButton.visible {
+            display: inline-block;
+        }
+
+        #fixButton:disabled {
+            background: #888;
+            cursor: not-allowed;
+        }
+
+        .shader-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .shader-label {
+            background: #1a1a2e;
+            padding: 10px 15px;
+            font-size: 14px;
+            color: #e94560;
+            border-bottom: 1px solid #0f3460;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .copy-btn {
+            background: #0f3460;
+            color: #00ff88;
+            border: 1px solid #00ff88;
+            padding: 5px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .copy-btn:hover {
+            background: #00ff88;
+            color: #0f3460;
+        }
+
+        .copy-btn.copied {
+            background: #00cc6a;
+            color: #0d1b2a;
+            border-color: #00cc6a;
+        }
+
+        .shader-editor {
+            flex: 1;
+            background: #0d1b2a;
+            color: #00ff88;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            padding: 15px;
+            border: none;
+            resize: none;
+            outline: none;
+            line-height: 1.5;
+        }
+
+        .shader-editor:focus {
+            background: #0a1520;
+        }
+
+        #errorDisplay {
+            background: #2d0a0a;
+            color: #ff6b6b;
+            padding: 10px 15px;
+            font-size: 12px;
+            font-family: monospace;
+            max-height: 120px;
+            overflow-y: auto;
+            display: none;
+            border-left: 4px solid #ff6b6b;
+        }
+
+        #errorDisplay.visible {
+            display: block;
+        }
+
+        .ai-panel {
+            background: #0f3460;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-top: 2px solid #e94560;
+        }
+
+        .ai-panel label {
+            font-size: 14px;
+            color: #e94560;
+            white-space: nowrap;
+            font-weight: bold;
+        }
+
+        #shaderDescription {
+            flex: 1;
+            background: #0d1b2a;
+            color: #00ff88;
+            border: 2px solid #16213e;
+            border-radius: 5px;
+            padding: 12px 15px;
+            font-size: 14px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+
+        #shaderDescription:focus {
+            border-color: #e94560;
+        }
+
+        #shaderDescription::placeholder {
+            color: #4a6fa5;
+        }
+
+        #submitButton {
+            background: #00ff88;
+            color: #0d1b2a;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        #submitButton:hover {
+            background: #00cc6a;
+        }
+
+        #submitButton:active {
+            transform: scale(0.98);
+        }
+
+        #submitButton:disabled {
+            background: #4a6fa5;
+            cursor: not-allowed;
+        }
+
+        .loading-indicator {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            color: #00ff88;
+        }
+
+        .loading-indicator.visible {
+            display: flex;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #16213e;
+            border-top-color: #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #statusMessage {
+            background: #1a4a1a;
+            color: #00ff88;
+            padding: 10px 15px;
+            font-size: 12px;
+            display: none;
+        }
+
+        #statusMessage.visible {
+            display: block;
+        }
+
+        #statusMessage.error {
+            background: #2d0a0a;
+            color: #ff6b6b;
+        }
+
+        .api-key-notice {
+            background: #2d2a0a;
+            color: #ffcc00;
+            padding: 8px 15px;
+            font-size: 12px;
+            text-align: center;
+            display: none;
+        }
+
+        .api-key-notice.visible {
+            display: block;
+        }
+
+        #clearApiKeyBtn {
+            background: transparent;
+            color: #ff6b6b;
+            border: 1px solid #ff6b6b;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 11px;
+            margin-left: 10px;
+        }
+
+        #clearApiKeyBtn:hover {
+            background: #ff6b6b;
+            color: #0d1b2a;
+        }
+
+        .fix-loading {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            color: #ffa500;
+            font-size: 12px;
+            padding: 8px 15px;
+            background: #2d2a0a;
+        }
+
+        .fix-loading.visible {
+            display: flex;
+        }
+
+        .fix-loading .spinner {
+            width: 16px;
+            height: 16px;
+            border-top-color: #ffa500;
+        }
+
+        /* Panel toggle button */
+        .panel-toggle {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #0f3460;
+            color: #00ff88;
+            border: 1px solid #00ff88;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            z-index: 100;
+            display: none;
+        }
+
+        .panel-toggle:hover {
+            background: #00ff88;
+            color: #0f3460;
+        }
+
+        .properties-panel.collapsed {
+            width: 0;
+            min-width: 0;
+            padding: 0;
+            border: none;
+            overflow: hidden;
+        }
+
+        .properties-panel.collapsed + .canvas-container .panel-toggle {
+            display: block;
+        }
+
+        .collapse-panel-btn {
+            background: transparent;
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .collapse-panel-btn:hover {
+            background: #00ff88;
+            color: #0f3460;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <!-- Properties Panel -->
+        <div class="properties-panel" id="propertiesPanel">
+            <div class="properties-header">
+                <h2>🎨 Shader Properties</h2>
+                <button class="collapse-panel-btn" id="collapsePanelBtn">◀</button>
+            </div>
+            <div class="properties-content" id="propertiesContent">
+                <!-- Dynamic properties will be inserted here -->
+            </div>
+        </div>
+
+        <div class="canvas-container">
+            <button class="panel-toggle" id="panelToggle">▶ Properties</button>
+            <canvas id="renderCanvas"></canvas>
+        </div>
+        <div class="editor-container">
+            <div class="editor-header">
+                <h2>Shader Editor</h2>
+                <div class="button-group">
+                    <button id="fixButton">🔧 Fix with AI</button>
+                    <button id="applyButton">Apply Shader</button>
+                </div>
+            </div>
+            <div id="errorDisplay"></div>
+            <div class="fix-loading" id="fixLoading">
+                <div class="spinner"></div>
+                <span>AI is analyzing and fixing the shader...</span>
+            </div>
+            <div id="statusMessage"></div>
+            <div class="shader-section">
+                <div class="shader-label">
+                    <span>Vertex Shader</span>
+                    <button class="copy-btn" id="copyVertexBtn" data-shader="vertex">
+                        <span>📋</span> Copy
+                    </button>
+                </div>
+                <textarea id="vertexShader" class="shader-editor"></textarea>
+            </div>
+            <div class="shader-section">
+                <div class="shader-label">
+                    <span>Fragment Shader</span>
+                    <button class="copy-btn" id="copyFragmentBtn" data-shader="fragment">
+                        <span>📋</span> Copy
+                    </button>
+                </div>
+                <textarea id="fragmentShader" class="shader-editor"></textarea>
+            </div>
+        </div>
+    </div>
+    
+    <div class="api-key-notice" id="apiKeyNotice">
+        🔑 API Key stored locally
+        <button id="clearApiKeyBtn">Clear API Key</button>
+    </div>
+    
+    <div class="ai-panel">
+        <label for="shaderDescription">Describe Shader to Create:</label>
+        <input type="text" id="shaderDescription" placeholder="e.g., A glowing lava effect with animated flowing patterns">
+        <div class="loading-indicator" id="loadingIndicator">
+            <div class="spinner"></div>
+            <span>Generating...</span>
+        </div>
+        <button id="submitButton">Submit</button>
+    </div>
+
+    <script>
+        // API Key storage key
+        const API_KEY_STORAGE = 'anthropic_api_key';
+        
+        // Shader version counter for unique names
+        let shaderVersion = 0;
+        
+        // Store last error for fix functionality
+        let lastShaderError = null;
+        
+        // Store custom uniform values
+        let customUniforms = {};
+        
+        // Built-in uniforms to ignore when parsing
+        const BUILTIN_UNIFORMS = [
+            'world', 'worldView', 'worldViewProjection', 'view', 'projection',
+            'time', 'cameraPosition', 'worldInverseTranspose'
+        ];
+        
+        // Check if API key exists
+        function getApiKey() {
+            return localStorage.getItem(API_KEY_STORAGE);
+        }
+        
+        function setApiKey(key) {
+            localStorage.setItem(API_KEY_STORAGE, key);
+            updateApiKeyNotice();
+        }
+        
+        function clearApiKey() {
+            localStorage.removeItem(API_KEY_STORAGE);
+            updateApiKeyNotice();
+        }
+        
+        function updateApiKeyNotice() {
+            const notice = document.getElementById('apiKeyNotice');
+            if (getApiKey()) {
+                notice.classList.add('visible');
+            } else {
+                notice.classList.remove('visible');
+            }
+        }
+
+        // ============================================
+        // SHADER COMMENT HELPER FUNCTION
+        // ============================================
+        function ensureShaderComment(shaderCode, shaderType) {
+            if (!shaderCode || typeof shaderCode !== 'string') {
+                return shaderCode;
+            }
+            
+            const comment = shaderType === 'vertex' ? '// Vertex Shader' : '// Fragment Shader';
+            const trimmedCode = shaderCode.trim();
+            
+            const commentPattern = shaderType === 'vertex' 
+                ? /^\/\/\s*Vertex\s*Shader/i 
+                : /^\/\/\s*Fragment\s*Shader/i;
+            
+            if (commentPattern.test(trimmedCode)) {
+                return shaderCode;
+            }
+            
+            return comment + '\n' + shaderCode;
+        }
+
+        // ============================================
+        // SHADER UNIFORM PARSING
+        // ============================================
+        function parseShaderUniforms(vertexCode, fragmentCode) {
+            const uniforms = [];
+            const uniformPattern = /uniform\s+(float|int|bool|vec2|vec3|vec4|mat3|mat4)\s+(\w+)\s*;/g;
+            
+            const allCode = vertexCode + '\n' + fragmentCode;
+            let match;
+            const foundNames = new Set();
+            
+            while ((match = uniformPattern.exec(allCode)) !== null) {
+                const type = match[1];
+                const name = match[2];
+                
+                // Skip built-in uniforms and duplicates
+                if (BUILTIN_UNIFORMS.includes(name) || foundNames.has(name)) {
+                    continue;
+                }
+                
+                foundNames.add(name);
+                
+                // Determine default value based on type
+                let defaultValue;
+                let control;
+                
+                switch (type) {
+                    case 'float':
+                        defaultValue = customUniforms[name]?.value ?? 1.0;
+                        control = 'slider';
+                        break;
+                    case 'int':
+                        defaultValue = customUniforms[name]?.value ?? 1;
+                        control = 'slider';
+                        break;
+                    case 'bool':
+                        defaultValue = customUniforms[name]?.value ?? false;
+                        control = 'checkbox';
+                        break;
+                    case 'vec2':
+                        defaultValue = customUniforms[name]?.value ?? [0.0, 0.0];
+                        control = 'vec2';
+                        break;
+                    case 'vec3':
+                        // Check if it's likely a color (contains 'color' in name)
+                        if (name.toLowerCase().includes('color')) {
+                            defaultValue = customUniforms[name]?.value ?? [1.0, 1.0, 1.0];
+                            control = 'color';
+                        } else {
+                            defaultValue = customUniforms[name]?.value ?? [0.0, 0.0, 0.0];
+                            control = 'vec3';
+                        }
+                        break;
+                    case 'vec4':
+                        if (name.toLowerCase().includes('color')) {
+                            defaultValue = customUniforms[name]?.value ?? [1.0, 1.0, 1.0, 1.0];
+                            control = 'color4';
+                        } else {
+                            defaultValue = customUniforms[name]?.value ?? [0.0, 0.0, 0.0, 0.0];
+                            control = 'vec4';
+                        }
+                        break;
+                    default:
+                        continue; // Skip unsupported types
+                }
+                
+                uniforms.push({
+                    name,
+                    type,
+                    value: defaultValue,
+                    control
+                });
+            }
+            
+            return uniforms;
+        }
+
+        // ============================================
+        // PROPERTIES PANEL UI
+        // ============================================
+        function buildPropertiesPanel(uniforms) {
+            const content = document.getElementById('propertiesContent');
+            content.innerHTML = '';
+            
+            // Built-in Time Control
+            const builtinSection = createPropertySection('Built-in Uniforms', [
+                { name: 'time', type: 'float', control: 'readonly', value: 0 },
+                { name: 'timeScale', type: 'float', control: 'slider', value: customUniforms['timeScale']?.value ?? 1.0, min: 0, max: 5, step: 0.1 }
+            ], false);
+            content.appendChild(builtinSection);
+            
+            // Custom Uniforms
+            if (uniforms.length > 0) {
+                const customSection = createPropertySection('Custom Uniforms', uniforms, true);
+                content.appendChild(customSection);
+            } else {
+                const noProps = document.createElement('div');
+                noProps.className = 'no-properties';
+                noProps.textContent = 'No custom uniforms detected in shader.';
+                content.appendChild(noProps);
+            }
+            
+            // Add new uniform section
+            const addSection = createAddUniformSection();
+            content.appendChild(addSection);
+        }
+        
+        function createPropertySection(title, properties, allowDelete = false) {
+            const section = document.createElement('div');
+            section.className = 'property-section';
+            
+            const header = document.createElement('div');
+            header.className = 'property-section-header';
+            header.innerHTML = `<span>${title}</span><span class="toggle-icon">▼</span>`;
+            header.addEventListener('click', () => {
+                header.classList.toggle('collapsed');
+                sectionContent.classList.toggle('hidden');
+            });
+            
+            const sectionContent = document.createElement('div');
+            sectionContent.className = 'property-section-content';
+            
+            properties.forEach(prop => {
+                const item = createPropertyItem(prop, allowDelete);
+                sectionContent.appendChild(item);
+            });
+            
+            section.appendChild(header);
+            section.appendChild(sectionContent);
+            
+            return section;
+        }
+        
+        function createPropertyItem(prop, allowDelete = false) {
+            const item = document.createElement('div');
+            item.className = 'property-item';
+            item.dataset.uniformName = prop.name;
+            
+            const label = document.createElement('div');
+            label.className = 'property-label';
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = prop.name;
+            label.appendChild(nameSpan);
+            
+            if (allowDelete && !BUILTIN_UNIFORMS.includes(prop.name)) {
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-uniform-btn';
+                deleteBtn.textContent = '✕';
+                deleteBtn.title = 'Remove uniform';
+                deleteBtn.addEventListener('click', () => removeUniform(prop.name));
+                label.appendChild(deleteBtn);
+            }
+            
+            const valueSpan = document.createElement('span');
+            valueSpan.className = 'property-value';
+            valueSpan.id = `value-${prop.name}`;
+            label.appendChild(valueSpan);
+            
+            item.appendChild(label);
+            
+            // Create appropriate control
+            const control = createControl(prop);
+            item.appendChild(control);
+            
+            // Update value display
+            updateValueDisplay(prop.name, prop.value);
+            
+            return item;
+        }
+        
+        function createControl(prop) {
+            const control = document.createElement('div');
+            control.className = 'property-control';
+            
+            switch (prop.control) {
+                case 'readonly':
+                    const readonlySpan = document.createElement('span');
+                    readonlySpan.style.color = '#4a6fa5';
+                    readonlySpan.style.fontSize = '11px';
+                    readonlySpan.id = `control-${prop.name}`;
+                    readonlySpan.textContent = 'Auto-updated';
+                    control.appendChild(readonlySpan);
+                    break;
+                    
+                case 'slider':
+                    const slider = document.createElement('input');
+                    slider.type = 'range';
+                    slider.className = 'property-slider';
+                    slider.min = prop.min ?? (prop.type === 'int' ? 0 : 0);
+                    slider.max = prop.max ?? (prop.type === 'int' ? 100 : 10);
+                    slider.step = prop.step ?? (prop.type === 'int' ? 1 : 0.01);
+                    slider.value = prop.value;
+                    slider.id = `control-${prop.name}`;
+                    slider.addEventListener('input', (e) => {
+                        const val = prop.type === 'int' ? parseInt(e.target.value) : parseFloat(e.target.value);
+                        updateUniform(prop.name, val, prop.type);
+                    });
+                    control.appendChild(slider);
+                    break;
+                    
+                case 'checkbox':
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.className = 'property-checkbox';
+                    checkbox.checked = prop.value;
+                    checkbox.id = `control-${prop.name}`;
+                    checkbox.addEventListener('change', (e) => {
+                        updateUniform(prop.name, e.target.checked, prop.type);
+                    });
+                    control.appendChild(checkbox);
+                    break;
+                    
+                case 'color':
+                    const colorInput = document.createElement('input');
+                    colorInput.type = 'color';
+                    colorInput.className = 'property-color';
+                    colorInput.value = rgbToHex(prop.value);
+                    colorInput.id = `control-${prop.name}`;
+                    colorInput.addEventListener('input', (e) => {
+                        const rgb = hexToRgb(e.target.value);
+                        updateUniform(prop.name, rgb, prop.type);
+                    });
+                    control.appendChild(colorInput);
+                    break;
+                    
+                case 'color4':
+                    const color4Container = document.createElement('div');
+                    color4Container.style.display = 'flex';
+                    color4Container.style.gap = '5px';
+                    color4Container.style.alignItems = 'center';
+                    
+                    const color4Input = document.createElement('input');
+                    color4Input.type = 'color';
+                    color4Input.className = 'property-color';
+                    color4Input.style.flex = '1';
+                    color4Input.value = rgbToHex(prop.value);
+                    color4Input.id = `control-${prop.name}`;
+                    
+                    const alphaSlider = document.createElement('input');
+                    alphaSlider.type = 'range';
+                    alphaSlider.className = 'property-slider';
+                    alphaSlider.style.width = '60px';
+                    alphaSlider.min = 0;
+                    alphaSlider.max = 1;
+                    alphaSlider.step = 0.01;
+                    alphaSlider.value = prop.value[3] ?? 1;
+                    alphaSlider.id = `control-${prop.name}-alpha`;
+                    
+                    const updateColor4 = () => {
+                        const rgb = hexToRgb(color4Input.value);
+                        rgb.push(parseFloat(alphaSlider.value));
+                        updateUniform(prop.name, rgb, prop.type);
+                    };
+                    
+                    color4Input.addEventListener('input', updateColor4);
+                    alphaSlider.addEventListener('input', updateColor4);
+                    
+                    color4Container.appendChild(color4Input);
+                    color4Container.appendChild(alphaSlider);
+                    control.appendChild(color4Container);
+                    break;
+                    
+                case 'vec2':
+                case 'vec3':
+                case 'vec4':
+                    const vecContainer = document.createElement('div');
+                    vecContainer.className = 'property-vec';
+                    
+                    const components = prop.control === 'vec2' ? ['X', 'Y'] : 
+                                       prop.control === 'vec3' ? ['X', 'Y', 'Z'] : 
+                                       ['X', 'Y', 'Z', 'W'];
+                    
+                    components.forEach((comp, i) => {
+                        const vecItem = document.createElement('div');
+                        vecItem.className = 'property-vec-item';
+                        
+                        const input = document.createElement('input');
+                        input.type = 'number';
+                        input.step = '0.01';
+                        input.value = prop.value[i] ?? 0;
+                        input.id = `control-${prop.name}-${comp.toLowerCase()}`;
+                        input.addEventListener('input', () => {
+                            const values = components.map((c, idx) => {
+                                const inp = document.getElementById(`control-${prop.name}-${c.toLowerCase()}`);
+                                return parseFloat(inp.value) || 0;
+                            });
+                            updateUniform(prop.name, values, prop.type);
+                        });
+                        
+                        const vecLabel = document.createElement('div');
+                        vecLabel.className = 'property-vec-label';
+                        vecLabel.textContent = comp;
+                        
+                        vecItem.appendChild(input);
+                        vecItem.appendChild(vecLabel);
+                        vecContainer.appendChild(vecItem);
+                    });
+                    
+                    control.appendChild(vecContainer);
+                    break;
+            }
+            
+            return control;
+        }
+        
+        function createAddUniformSection() {
+            const section = document.createElement('div');
+            section.className = 'add-uniform-section';
+            
+            const title = document.createElement('div');
+            title.className = 'add-uniform-title';
+            title.textContent = '➕ Add Custom Uniform';
+            section.appendChild(title);
+            
+            const row1 = document.createElement('div');
+            row1.className = 'add-uniform-row';
+            
+            const nameInput = document.createElement('input');
+            nameInput.type = 'text';
+            nameInput.className = 'add-uniform-input';
+            nameInput.placeholder = 'Uniform name';
+            nameInput.id = 'newUniformName';
+            
+            const typeSelect = document.createElement('select');
+            typeSelect.className = 'add-uniform-select';
+            typeSelect.id = 'newUniformType';
+            ['float', 'int', 'bool', 'vec2', 'vec3', 'vec4'].forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                typeSelect.appendChild(option);
+            });
+            
+            row1.appendChild(nameInput);
+            row1.appendChild(typeSelect);
+            section.appendChild(row1);
+            
+            const addBtn = document.createElement('button');
+            addBtn.className = 'add-uniform-btn';
+            addBtn.textContent = 'Add & Insert into Shader';
+            addBtn.addEventListener('click', addNewUniform);
+            section.appendChild(addBtn);
+            
+            return section;
+        }
+        
+        function updateValueDisplay(name, value) {
+            const valueSpan = document.getElementById(`value-${name}`);
+            if (!valueSpan) return;
+            
+            if (Array.isArray(value)) {
+                valueSpan.textContent = value.map(v => v.toFixed(2)).join(', ');
+            } else if (typeof value === 'boolean') {
+                valueSpan.textContent = value ? 'true' : 'false';
+            } else if (typeof value === 'number') {
+                valueSpan.textContent = value.toFixed(2);
+            }
+        }
+        
+        function updateUniform(name, value, type) {
+            customUniforms[name] = { value, type };
+            updateValueDisplay(name, value);
+            
+            // Apply to shader material
+            if (shaderMaterial) {
+                applyUniformToMaterial(name, value, type);
+            }
+        }
+        
+        function applyUniformToMaterial(name, value, type) {
+            if (!shaderMaterial) return;
+            
+            try {
+                switch (type) {
+                    case 'float':
+                        shaderMaterial.setFloat(name, value);
+                        break;
+                    case 'int':
+                        shaderMaterial.setInt(name, value);
+                        break;
+                    case 'bool':
+                        shaderMaterial.setInt(name, value ? 1 : 0);
+                        break;
+                    case 'vec2':
+                        shaderMaterial.setVector2(name, new BABYLON.Vector2(value[0], value[1]));
+                        break;
+                    case 'vec3':
+                        shaderMaterial.setVector3(name, new BABYLON.Vector3(value[0], value[1], value[2]));
+                        break;
+                    case 'vec4':
+                        shaderMaterial.setVector4(name, new BABYLON.Vector4(value[0], value[1], value[2], value[3]));
+                        break;
+                }
+            } catch (e) {
+                console.warn(`Could not set uniform ${name}:`, e);
+            }
+        }
+        
+        function applyAllCustomUniforms() {
+            for (const [name, data] of Object.entries(customUniforms)) {
+                applyUniformToMaterial(name, data.value, data.type);
+            }
+        }
+        
+        function addNewUniform() {
+            const nameInput = document.getElementById('newUniformName');
+            const typeSelect = document.getElementById('newUniformType');
+            
+            const name = nameInput.value.trim();
+            const type = typeSelect.value;
+            
+            if (!name) {
+                showStatus('Please enter a uniform name', true);
+                return;
+            }
+            
+            if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
+                showStatus('Invalid uniform name. Use letters, numbers, and underscores.', true);
+                return;
+            }
+            
+            // Add uniform declaration to fragment shader
+            const fragmentShader = document.getElementById('fragmentShader');
+            let code = fragmentShader.value;
+            
+            // Check if uniform already exists
+            const uniformRegex = new RegExp(`uniform\\s+\\w+\\s+${name}\\s*;`);
+            if (uniformRegex.test(code)) {
+                showStatus(`Uniform "${name}" already exists in shader`, true);
+                return;
+            }
+            
+            // Find position after precision declaration or at the top
+            const precisionMatch = code.match(/precision\s+\w+\s+float\s*;/);
+            if (precisionMatch) {
+                const insertPos = precisionMatch.index + precisionMatch[0].length;
+                code = code.slice(0, insertPos) + `\nuniform ${type} ${name};` + code.slice(insertPos);
+            } else {
+                code = `uniform ${type} ${name};\n` + code;
+            }
+            
+            fragmentShader.value = code;
+            
+            // Set default value
+            let defaultValue;
+            switch (type) {
+                case 'float': defaultValue = 1.0; break;
+                case 'int': defaultValue = 1; break;
+                case 'bool': defaultValue = false; break;
+                case 'vec2': defaultValue = [0, 0]; break;
+                case 'vec3': defaultValue = [1, 1, 1]; break;
+                case 'vec4': defaultValue = [1, 1, 1, 1]; break;
+            }
+            
+            customUniforms[name] = { value: defaultValue, type };
+            
+            // Clear input
+            nameInput.value = '';
+            
+            showStatus(`Uniform "${name}" added. Click "Apply Shader" to use it.`);
+        }
+        
+        function removeUniform(name) {
+            // Remove from both shaders
+            ['vertexShader', 'fragmentShader'].forEach(shaderId => {
+                const textarea = document.getElementById(shaderId);
+                let code = textarea.value;
+                const uniformRegex = new RegExp(`\\s*uniform\\s+\\w+\\s+${name}\\s*;\\s*`, 'g');
+                code = code.replace(uniformRegex, '\n');
+                textarea.value = code;
+            });
+            
+            // Remove from custom uniforms
+            delete customUniforms[name];
+            
+            showStatus(`Uniform "${name}" removed. Click "Apply Shader" to update.`);
+        }
+        
+        // Color conversion helpers
+        function rgbToHex(rgb) {
+            const toHex = (c) => {
+                const hex = Math.round(Math.min(1, Math.max(0, c)) * 255).toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            };
+            return '#' + toHex(rgb[0]) + toHex(rgb[1]) + toHex(rgb[2]);
+        }
+        
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? [
+                parseInt(result[1], 16) / 255,
+                parseInt(result[2], 16) / 255,
+                parseInt(result[3], 16) / 255
+            ] : [1, 1, 1];
+        }
+
+        // Default vertex shader (with comment)
+        const defaultVertexShader = `// Vertex Shader
+precision highp float;
+
+// Attributes
+attribute vec3 position;
+attribute vec3 normal;
+attribute vec2 uv;
+
+// Uniforms
+uniform mat4 world;
+uniform mat4 worldViewProjection;
+uniform float time;
+
+// Varying
+varying vec3 vPosition;
+varying vec3 vNormal;
+varying vec2 vUV;
+varying vec3 vWorldPosition;
+
+void main() {
+    vec4 worldPos = world * vec4(position, 1.0);
+    vWorldPosition = worldPos.xyz;
+    vPosition = position;
+    vNormal = normalize(mat3(world) * normal);
+    vUV = uv;
+    
+    gl_Position = worldViewProjection * vec4(position, 1.0);
+}`;
+
+        // Default fragment shader (with comment)
+        const defaultFragmentShader = `// Fragment Shader
+precision highp float;
+
+// Varying
+varying vec3 vPosition;
+varying vec3 vNormal;
+varying vec2 vUV;
+varying vec3 vWorldPosition;
+
+// Uniforms
+uniform float time;
+uniform vec3 cameraPosition;
+
+// Custom uniforms
+uniform float intensity;
+uniform vec3 baseColor;
+uniform float pulseSpeed;
+
+void main() {
+    // Normalize the normal
+    vec3 normal = normalize(vNormal);
+    
+    // Create a simple light direction
+    vec3 lightDir = normalize(vec3(1.0, 1.0, 1.0));
+    
+    // Calculate diffuse lighting
+    float diffuse = max(dot(normal, lightDir), 0.0);
+    
+    // Create animated color based on position and time
+    vec3 animColor = vec3(
+        sin(vPosition.x * 2.0 + time * pulseSpeed) * 0.5 + 0.5,
+        sin(vPosition.y * 2.0 + time * pulseSpeed + 2.0) * 0.5 + 0.5,
+        sin(vPosition.z * 2.0 + time * pulseSpeed + 4.0) * 0.5 + 0.5
+    );
+    
+    // Mix with base color
+    vec3 color = mix(baseColor, animColor, 0.5) * intensity;
+    
+    // Add rim lighting effect
+    vec3 viewDir = normalize(cameraPosition - vWorldPosition);
+    float rim = 1.0 - max(dot(viewDir, normal), 0.0);
+    rim = pow(rim, 3.0);
+    
+    // Combine lighting
+    vec3 ambient = color * 0.3;
+    vec3 diffuseColor = color * diffuse * 0.7;
+    vec3 rimColor = vec3(0.3, 0.6, 1.0) * rim * intensity;
+    
+    vec3 finalColor = ambient + diffuseColor + rimColor;
+    
+    gl_FragColor = vec4(finalColor, 1.0);
+}`;
+
+        // Set default shaders in text areas
+        document.getElementById('vertexShader').value = defaultVertexShader;
+        document.getElementById('fragmentShader').value = defaultFragmentShader;
+        
+        // Set initial custom uniform values
+        customUniforms = {
+            'intensity': { value: 1.0, type: 'float' },
+            'baseColor': { value: [0.5, 0.3, 0.8], type: 'vec3' },
+            'pulseSpeed': { value: 1.0, type: 'float' },
+            'timeScale': { value: 1.0, type: 'float' }
+        };
+
+        // Initialize Babylon.js
+        const canvas = document.getElementById('renderCanvas');
+        const engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+
+        // Store meshes and shader material globally
+        let meshes = [];
+        let shaderMaterial = null;
+        let scene = null;
+        let startTime = Date.now();
+        let camera = null;
+        let timeScale = 1.0;
+
+        // Intercept WebGL shader compilation errors
+        function setupShaderErrorCapture() {
+            const gl = engine._gl;
+            const originalShaderSource = gl.shaderSource.bind(gl);
+            const originalCompileShader = gl.compileShader.bind(gl);
+            const originalGetShaderInfoLog = gl.getShaderInfoLog.bind(gl);
+            const originalGetShaderParameter = gl.getShaderParameter.bind(gl);
+            
+            let currentShaderSource = '';
+            let shaderErrors = [];
+            
+            gl.shaderSource = function(shader, source) {
+                currentShaderSource = source;
+                return originalShaderSource(shader, source);
+            };
+            
+            gl.compileShader = function(shader) {
+                const result = originalCompileShader(shader);
+                const success = originalGetShaderParameter(shader, gl.COMPILE_STATUS);
+                if (!success) {
+                    const error = originalGetShaderInfoLog(shader);
+                    if (error) {
+                        shaderErrors.push({
+                            error: error,
+                            source: currentShaderSource
+                        });
+                    }
+                }
+                return result;
+            };
+            
+            window.getShaderErrors = function() {
+                const errors = [...shaderErrors];
+                shaderErrors = [];
+                return errors;
+            };
+        }
+        
+        setupShaderErrorCapture();
+
+        const createScene = function() {
+            scene = new BABYLON.Scene(engine);
+            scene.clearColor = new BABYLON.Color4(0.05, 0.05, 0.1, 1);
+
+            camera = new BABYLON.ArcRotateCamera(
+                "camera",
+                Math.PI / 4,
+                Math.PI / 3,
+                15,
+                BABYLON.Vector3.Zero(),
+                scene
+            );
+            camera.attachControl(canvas, true);
+            camera.wheelPrecision = 50;
+
+            const cube = BABYLON.MeshBuilder.CreateBox("cube", { size: 1.5 }, scene);
+            cube.position = new BABYLON.Vector3(-4, 2, 0);
+
+            const sphere = BABYLON.MeshBuilder.CreateSphere("sphere", { diameter: 1.8, segments: 32 }, scene);
+            sphere.position = new BABYLON.Vector3(0, 2, 0);
+
+            const cylinder = BABYLON.MeshBuilder.CreateCylinder("cylinder", { height: 2, diameter: 1.5 }, scene);
+            cylinder.position = new BABYLON.Vector3(4, 2, 0);
+
+            const dodecahedron = BABYLON.MeshBuilder.CreatePolyhedron("dodecahedron", { type: 2, size: 1 }, scene);
+            dodecahedron.position = new BABYLON.Vector3(-2, -2, 0);
+
+            const tetrahedron = BABYLON.MeshBuilder.CreatePolyhedron("tetrahedron", { type: 0, size: 1.2 }, scene);
+            tetrahedron.position = new BABYLON.Vector3(2, -2, 0);
+
+            meshes = [cube, sphere, cylinder, dodecahedron, tetrahedron];
+
+            createShaderMaterial();
+
+            scene.registerBeforeRender(function() {
+                const deltaTime = engine.getDeltaTime() / 1000;
+                
+                meshes.forEach((mesh, index) => {
+                    const speed = 0.3 + index * 0.1;
+                    mesh.rotation.x += deltaTime * speed;
+                    mesh.rotation.y += deltaTime * speed * 1.3;
+                });
+
+                if (shaderMaterial) {
+                    // Get time scale from custom uniforms
+                    const currentTimeScale = customUniforms['timeScale']?.value ?? 1.0;
+                    const elapsed = ((Date.now() - startTime) / 1000) * currentTimeScale;
+                    shaderMaterial.setFloat("time", elapsed);
+                    
+                    // Update time display
+                    updateValueDisplay('time', elapsed);
+                    
+                    if (camera) {
+                        shaderMaterial.setVector3("cameraPosition", camera.position);
+                    }
+                }
+            });
+
+            return scene;
+        };
+
+        function showFixButton(show) {
+            const fixButton = document.getElementById('fixButton');
+            if (show) {
+                fixButton.classList.add('visible');
+            } else {
+                fixButton.classList.remove('visible');
+            }
+        }
+
+        function createShaderMaterial() {
+            const vertexCode = document.getElementById('vertexShader').value;
+            const fragmentCode = document.getElementById('fragmentShader').value;
+
+            window.getShaderErrors();
+
+            shaderVersion++;
+            const shaderName = "customShader" + shaderVersion;
+
+            BABYLON.Effect.ShadersStore[shaderName + "VertexShader"] = vertexCode;
+            BABYLON.Effect.ShadersStore[shaderName + "FragmentShader"] = fragmentCode;
+
+            // Parse uniforms from shader code
+            const detectedUniforms = parseShaderUniforms(vertexCode, fragmentCode);
+            
+            // Build uniform names list for shader material
+            const uniformNames = [
+                "world", "worldView", "worldViewProjection", "view", "projection", 
+                "time", "cameraPosition"
+            ];
+            
+            // Add detected custom uniforms
+            detectedUniforms.forEach(u => {
+                if (!uniformNames.includes(u.name)) {
+                    uniformNames.push(u.name);
+                }
+            });
+            
+            // Also add any previously stored custom uniforms
+            Object.keys(customUniforms).forEach(name => {
+                if (!uniformNames.includes(name) && name !== 'timeScale') {
+                    uniformNames.push(name);
+                }
+            });
+
+            try {
+                const newMaterial = new BABYLON.ShaderMaterial(
+                    shaderName,
+                    scene,
+                    {
+                        vertex: shaderName,
+                        fragment: shaderName
+                    },
+                    {
+                        attributes: ["position", "normal", "uv"],
+                        uniforms: uniformNames,
+                        needAlphaBlending: false
+                    }
+                );
+
+                newMaterial.backFaceCulling = false;
+
+                const oldMaterial = shaderMaterial;
+                shaderMaterial = newMaterial;
+
+                meshes.forEach(mesh => {
+                    mesh.material = newMaterial;
+                });
+
+                if (oldMaterial) {
+                    oldMaterial.dispose();
+                }
+
+                // Apply all custom uniforms
+                setTimeout(() => {
+                    applyAllCustomUniforms();
+                }, 50);
+
+                const errorDisplay = document.getElementById('errorDisplay');
+                errorDisplay.textContent = '';
+                errorDisplay.classList.remove('visible');
+                showFixButton(false);
+                lastShaderError = null;
+
+                // Build properties panel
+                buildPropertiesPanel(detectedUniforms);
+
+                setTimeout(() => {
+                    const errors = window.getShaderErrors();
+                    
+                    if (errors.length > 0) {
+                        let errorMessages = errors.map((e, i) => {
+                            const shaderType = e.source.includes('gl_Position') ? 'Vertex Shader' : 'Fragment Shader';
+                            return `[${shaderType}] ${e.error}`;
+                        }).join('\n\n');
+                        
+                        lastShaderError = {
+                            message: errorMessages,
+                            vertexShader: vertexCode,
+                            fragmentShader: fragmentCode,
+                            rawErrors: errors
+                        };
+                        
+                        showError(errorMessages);
+                        showFixButton(true);
+                        showStatus('Shader compilation failed. Click "Fix with AI" to attempt automatic repair.', true);
+                    } else if (!newMaterial.isReady()) {
+                        setTimeout(() => {
+                            if (!newMaterial.isReady()) {
+                                const lateErrors = window.getShaderErrors();
+                                if (lateErrors.length > 0) {
+                                    let errorMessages = lateErrors.map((e, i) => {
+                                        const shaderType = e.source.includes('gl_Position') ? 'Vertex Shader' : 'Fragment Shader';
+                                        return `[${shaderType}] ${e.error}`;
+                                    }).join('\n\n');
+                                    
+                                    lastShaderError = {
+                                        message: errorMessages,
+                                        vertexShader: vertexCode,
+                                        fragmentShader: fragmentCode,
+                                        rawErrors: lateErrors
+                                    };
+                                    
+                                    showError(errorMessages);
+                                    showFixButton(true);
+                                } else {
+                                    lastShaderError = {
+                                        message: "Shader failed to compile. The material is not ready.",
+                                        vertexShader: vertexCode,
+                                        fragmentShader: fragmentCode,
+                                        rawErrors: []
+                                    };
+                                    showError("Shader compilation failed. Check console for details.");
+                                    showFixButton(true);
+                                }
+                            } else {
+                                showStatus('Shader applied successfully!');
+                            }
+                        }, 500);
+                    } else {
+                        showStatus('Shader applied successfully!');
+                    }
+                }, 100);
+
+            } catch (error) {
+                lastShaderError = {
+                    message: error.message,
+                    vertexShader: vertexCode,
+                    fragmentShader: fragmentCode,
+                    rawErrors: []
+                };
+                showError("Error creating shader: " + error.message);
+                showFixButton(true);
+                console.error("Shader error:", error);
+            }
+        }
+
+        function showError(message) {
+            const errorDisplay = document.getElementById('errorDisplay');
+            errorDisplay.textContent = message;
+            errorDisplay.classList.add('visible');
+        }
+        
+        function clearError() {
+            const errorDisplay = document.getElementById('errorDisplay');
+            errorDisplay.textContent = '';
+            errorDisplay.classList.remove('visible');
+        }
+        
+        function showStatus(message, isError = false) {
+            const statusDisplay = document.getElementById('statusMessage');
+            statusDisplay.textContent = message;
+            statusDisplay.classList.add('visible');
+            statusDisplay.classList.toggle('error', isError);
+            
+            setTimeout(() => {
+                statusDisplay.classList.remove('visible');
+            }, 5000);
+        }
+
+        function copyShaderToClipboard(shaderType) {
+            const isVertex = shaderType === 'vertex';
+            const textareaId = isVertex ? 'vertexShader' : 'fragmentShader';
+            const buttonId = isVertex ? 'copyVertexBtn' : 'copyFragmentBtn';
+            const shaderLabel = isVertex ? 'Vertex Shader' : 'Fragment Shader';
+            
+            const shaderCode = document.getElementById(textareaId).value;
+            const button = document.getElementById(buttonId);
+            
+            const shaderWithComment = ensureShaderComment(shaderCode, shaderType);
+            
+            navigator.clipboard.writeText(shaderWithComment).then(() => {
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<span>✓</span> Copied!';
+                button.classList.add('copied');
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.classList.remove('copied');
+                }, 2000);
+                
+                showStatus(`${shaderLabel} copied to clipboard!`);
+            }).catch(err => {
+                console.error('Failed to copy shader:', err);
+                showStatus('Failed to copy to clipboard', true);
+            });
+        }
+
+        // Create scene
+        createScene();
+
+        // Apply button handler
+        document.getElementById('applyButton').addEventListener('click', function() {
+            createShaderMaterial();
+        });
+
+        // Fix button handler
+        document.getElementById('fixButton').addEventListener('click', handleFixShader);
+
+        // Copy button handlers
+        document.getElementById('copyVertexBtn').addEventListener('click', function() {
+            copyShaderToClipboard('vertex');
+        });
+        
+        document.getElementById('copyFragmentBtn').addEventListener('click', function() {
+            copyShaderToClipboard('fragment');
+        });
+
+        // Keyboard shortcut (Ctrl+Enter) to apply shader
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                createShaderMaterial();
+            }
+        });
+        
+        // Clear API Key button
+        document.getElementById('clearApiKeyBtn').addEventListener('click', function() {
+            if (confirm('Are you sure you want to clear your API key?')) {
+                clearApiKey();
+                showStatus('API key cleared');
+            }
+        });
+        
+        // Panel toggle handlers
+        document.getElementById('collapsePanelBtn').addEventListener('click', function() {
+            document.getElementById('propertiesPanel').classList.add('collapsed');
+        });
+        
+        document.getElementById('panelToggle').addEventListener('click', function() {
+            document.getElementById('propertiesPanel').classList.remove('collapsed');
+        });
+        
+        // AI Submit button handler
+        document.getElementById('submitButton').addEventListener('click', handleAISubmit);
+        
+        // Enter key in description field
+        document.getElementById('shaderDescription').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                handleAISubmit();
+            }
+        });
+        
+        async function handleFixShader() {
+            const apiKey = getApiKey();
+            
+            if (!apiKey) {
+                showStatus('Please enter your API key first in the description box below.', true);
+                return;
+            }
+            
+            if (!lastShaderError) {
+                showStatus('No shader error to fix.', true);
+                return;
+            }
+            
+            const fixButton = document.getElementById('fixButton');
+            const fixLoading = document.getElementById('fixLoading');
+            
+            fixButton.disabled = true;
+            fixLoading.classList.add('visible');
+            
+            try {
+                const fixedShaders = await fixShaderWithClaude(apiKey, lastShaderError);
+                
+                if (fixedShaders.vertexShader && fixedShaders.fragmentShader) {
+                    document.getElementById('vertexShader').value = ensureShaderComment(fixedShaders.vertexShader, 'vertex');
+                    document.getElementById('fragmentShader').value = ensureShaderComment(fixedShaders.fragmentShader, 'fragment');
+                    
+                    clearError();
+                    showFixButton(false);
+                    lastShaderError = null;
+                    
+                    createShaderMaterial();
+                    
+                    showStatus('Shader fixed and applied!');
+                } else {
+                    showStatus('Failed to parse fixed shader response', true);
+                }
+                
+            } catch (error) {
+                console.error('Error fixing shader:', error);
+                showStatus('Error fixing shader: ' + error.message, true);
+            } finally {
+                fixButton.disabled = false;
+                fixLoading.classList.remove('visible');
+            }
+        }
+        
+        async function fixShaderWithClaude(apiKey, errorInfo) {
+            const systemPrompt = `You are an expert GLSL shader debugger and fixer. You fix broken shaders for Babylon.js WebGL applications.
+
+You will be given:
+1. A vertex shader that may have errors
+2. A fragment shader that may have errors  
+3. The compilation error messages
+
+Your job is to analyze the errors and fix the shaders.
+
+IMPORTANT: Your response must contain exactly two code blocks:
+1. First code block labeled "VERTEX SHADER:" containing the fixed vertex shader
+2. Second code block labeled "FRAGMENT SHADER:" containing the fixed fragment shader
+
+Common issues to look for:
+- Missing precision declarations (use "precision highp float;")
+- Undefined variables
+- Type mismatches
+- Missing semicolons
+- Incorrect GLSL syntax
+- Missing or mismatched varying declarations between vertex and fragment shaders
+- Using reserved keywords
+- Incorrect function signatures
+- Missing uniform/attribute declarations
+
+The shaders must maintain this structure:
+- Vertex shader attributes: position, normal, uv
+- Vertex shader uniforms: world, worldViewProjection, time
+- Varying variables: vPosition, vNormal, vUV, vWorldPosition
+- Fragment shader uniforms: time, cameraPosition
+- Use gl_Position in vertex shader
+- Use gl_FragColor in fragment shader
+
+Fix the errors while preserving the intended visual effect as much as possible.`;
+
+            const userMessage = `Please fix these broken GLSL shaders.
+
+ERROR MESSAGES:
+${errorInfo.message}
+
+CURRENT VERTEX SHADER:
+\`\`\`glsl
+${errorInfo.vertexShader}
+\`\`\`
+
+CURRENT FRAGMENT SHADER:
+\`\`\`glsl
+${errorInfo.fragmentShader}
+\`\`\`
+
+Please provide the corrected shaders.`;
+
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: 'claude-opus-4-5-20251101',
+                    max_tokens: 4096,
+                    messages: [
+                        {
+                            role: 'user',
+                            content: userMessage
+                        }
+                    ],
+                    system: systemPrompt
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`API request failed: ${response.status} - ${errorData.error?.message || response.statusText}`);
+            }
+            
+            const data = await response.json();
+            const content = data.content[0].text;
+            
+            return parseShaderResponse(content);
+        }
+        
+        async function handleAISubmit() {
+            const descriptionInput = document.getElementById('shaderDescription');
+            const submitButton = document.getElementById('submitButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const description = descriptionInput.value.trim();
+            
+            if (!description) {
+                showStatus('Please enter a shader description', true);
+                return;
+            }
+            
+            let apiKey = getApiKey();
+            
+            if (!apiKey) {
+                if (description.startsWith('sk-ant-')) {
+                    setApiKey(description);
+                    descriptionInput.value = '';
+                    descriptionInput.placeholder = 'e.g., A glowing lava effect with animated flowing patterns';
+                    showStatus('API key saved! Now enter a shader description.');
+                    return;
+                } else {
+                    descriptionInput.value = '';
+                    descriptionInput.placeholder = 'Please enter your Anthropic API key (starts with sk-ant-)';
+                    showStatus('Please enter your Anthropic API key first', true);
+                    return;
+                }
+            }
+            
+            submitButton.disabled = true;
+            loadingIndicator.classList.add('visible');
+            
+            try {
+                const shaders = await generateShaderWithClaude(apiKey, description);
+                
+                if (shaders.vertexShader && shaders.fragmentShader) {
+                    document.getElementById('vertexShader').value = ensureShaderComment(shaders.vertexShader, 'vertex');
+                    document.getElementById('fragmentShader').value = ensureShaderComment(shaders.fragmentShader, 'fragment');
+                    
+                    // Reset custom uniforms for new shader
+                    customUniforms = {
+                        'timeScale': { value: 1.0, type: 'float' }
+                    };
+                    
+                    clearError();
+                    showFixButton(false);
+                    lastShaderError = null;
+                    
+                    createShaderMaterial();
+                    showStatus('Shader generated and applied successfully!');
+                } else {
+                    showStatus('Failed to parse shader response', true);
+                }
+                
+            } catch (error) {
+                console.error('Error generating shader:', error);
+                
+                if (error.message.includes('401')) {
+                    clearApiKey();
+                    showStatus('Invalid API key. Please enter a valid key.', true);
+                    descriptionInput.value = '';
+                    descriptionInput.placeholder = 'Please enter your Anthropic API key (starts with sk-ant-)';
+                } else if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+                    showStatus('CORS error: Please use a CORS proxy or run from a server. See console for details.', true);
+                    console.log('To fix CORS issues, you can:\n1. Use a CORS proxy service\n2. Run this through a local server with proxy\n3. Use a browser extension to disable CORS (for development only)');
+                } else {
+                    showStatus('Error: ' + error.message, true);
+                }
+            } finally {
+                submitButton.disabled = false;
+                loadingIndicator.classList.remove('visible');
+            }
+        }
+        
+        async function generateShaderWithClaude(apiKey, description) {
+            const systemPrompt = `You are an expert GLSL shader programmer. You create shaders for Babylon.js WebGL applications.
+
+When given a description, you must generate both a vertex shader and a fragment shader.
+
+IMPORTANT: Your response must contain exactly two code blocks:
+1. First code block labeled "VERTEX SHADER:" containing the vertex shader
+2. Second code block labeled "FRAGMENT SHADER:" containing the fragment shader
+
+The shaders must:
+- Use precision highp float
+- Vertex shader must have these attributes: position, normal, uv
+- Vertex shader must have these uniforms: world, worldViewProjection, time
+- Vertex shader must output: vPosition, vNormal, vUV, vWorldPosition as varying
+- Fragment shader must have uniform: time, cameraPosition
+- Fragment shader must receive the varying variables from vertex shader
+- Use gl_Position in vertex shader and gl_FragColor in fragment shader
+- Be creative with the visual effect based on the description
+- Use the 'time' uniform for animations
+- Include custom uniforms with descriptive names (like intensity, speed, colorA, colorB, etc.) to allow runtime adjustment
+
+Here is the template structure to follow:
+
+VERTEX SHADER:
+\`\`\`glsl
+precision highp float;
+
+attribute vec3 position;
+attribute vec3 normal;
+attribute vec2 uv;
+
+uniform mat4 world;
+uniform mat4 worldViewProjection;
+uniform float time;
+
+varying vec3 vPosition;
+varying vec3 vNormal;
+varying vec2 vUV;
+varying vec3 vWorldPosition;
+
+void main() {
+    vec4 worldPos = world * vec4(position, 1.0);
+    vWorldPosition = worldPos.xyz;
+    vPosition = position;
+    vNormal = normalize(mat3(world) * normal);
+    vUV = uv;
+    
+    // Add vertex manipulation here if needed
+    
+    gl_Position = worldViewProjection * vec4(position, 1.0);
+}
+\`\`\`
+
+FRAGMENT SHADER:
+\`\`\`glsl
+precision highp float;
+
+varying vec3 vPosition;
+varying vec3 vNormal;
+varying vec2 vUV;
+varying vec3 vWorldPosition;
+
+uniform float time;
+uniform vec3 cameraPosition;
+
+// Add custom uniforms for adjustable parameters
+uniform float intensity;
+uniform vec3 primaryColor;
+uniform float speed;
+
+void main() {
+    // Your creative shader code here using the custom uniforms
+    
+    gl_FragColor = vec4(color, 1.0);
+}
+\`\`\``;
+
+            const response = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': apiKey,
+                    'anthropic-version': '2023-06-01',
+                    'anthropic-dangerous-direct-browser-access': 'true'
+                },
+                body: JSON.stringify({
+                    model: 'claude-opus-4-5-20251101',
+                    max_tokens: 4096,
+                    messages: [
+                        {
+                            role: 'user',
+                            content: `Create GLSL shaders for the following effect: ${description}
+
+Please include several custom uniform variables (like intensity, speed, colors, etc.) so the user can adjust the effect in real-time through the properties panel.`
+                        }
+                    ],
+                    system: systemPrompt
+                })
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(`API request failed: ${response.status} - ${errorData.error?.message || response.statusText}`);
+            }
+            
+            const data = await response.json();
+            const content = data.content[0].text;
+            
+            return parseShaderResponse(content);
+        }
+        
+        function parseShaderResponse(content) {
+            let vertexShader = '';
+            let fragmentShader = '';
+            
+            const glslBlocks = content.match(/```glsl\s*([\s\S]*?)```/g);
+            
+            if (glslBlocks && glslBlocks.length >= 2) {
+                const extractCode = (block) => {
+                    return block.replace(/```glsl\s*/, '').replace(/```$/, '').trim();
+                };
+                
+                for (const block of glslBlocks) {
+                    const code = extractCode(block);
+                    if (code.includes('gl_Position')) {
+                        vertexShader = code;
+                    } else if (code.includes('gl_FragColor')) {
+                        fragmentShader = code;
+                    }
+                }
+                
+                if (!vertexShader && !fragmentShader) {
+                    vertexShader = extractCode(glslBlocks[0]);
+                    fragmentShader = extractCode(glslBlocks[1]);
+                } else if (!vertexShader) {
+                    for (const block of glslBlocks) {
+                        const code = extractCode(block);
+                        if (code !== fragmentShader) {
+                            vertexShader = code;
+                            break;
+                        }
+                    }
+                } else if (!fragmentShader) {
+                    for (const block of glslBlocks) {
+                        const code = extractCode(block);
+                        if (code !== vertexShader) {
+                            fragmentShader = code;
+                            break;
+                        }
+                    }
+                }
+            }
+            
+            if (!vertexShader || !fragmentShader) {
+                const vertexMatch = content.match(/VERTEX SHADER:?\s*```(?:glsl)?\s*([\s\S]*?)```/i);
+                const fragmentMatch = content.match(/FRAGMENT SHADER:?\s*```(?:glsl)?\s*([\s\S]*?)```/i);
+                
+                if (vertexMatch) vertexShader = vertexMatch[1].trim();
+                if (fragmentMatch) fragmentShader = fragmentMatch[1].trim();
+            }
+            
+            if (!vertexShader || !fragmentShader) {
+                const codeBlocks = content.match(/```(?:\w+)?\s*([\s\S]*?)```/g);
+                if (codeBlocks && codeBlocks.length >= 2) {
+                    const extractCode = (block) => {
+                        return block.replace(/```\w*\s*/, '').replace(/```$/, '').trim();
+                    };
+                    if (!vertexShader) vertexShader = extractCode(codeBlocks[0]);
+                    if (!fragmentShader) fragmentShader = extractCode(codeBlocks[1]);
+                }
+            }
+            
+            return { vertexShader, fragmentShader };
+        }
+
+        // Initialize API key notice
+        updateApiKeyNotice();
+        
+        // Set initial placeholder based on API key state
+        if (!getApiKey()) {
+            document.getElementById('shaderDescription').placeholder = 'First, enter your Anthropic API key (starts with sk-ant-)';
+        }
+
+        // Render loop
+        engine.runRenderLoop(function() {
+            scene.render();
+        });
+
+        // Resize handler
+        window.addEventListener('resize', function() {
+            engine.resize();
+        });
+    </script>
+</body>
+</html>
