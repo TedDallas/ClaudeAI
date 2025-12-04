@@ -25,6 +25,20 @@
             display: block;
         }
         
+        /* Hide cursor when in fullscreen */
+        body.fullscreen-active {
+            cursor: none;
+        }
+        
+        body.fullscreen-active * {
+            cursor: none;
+        }
+        
+        /* Ensure buttons still show pointer on hover when not in fullscreen */
+        body:not(.fullscreen-active) button:hover {
+            cursor: pointer;
+        }
+        
         #ui {
             position: absolute;
             top: 20px;
@@ -40,6 +54,10 @@
             margin-bottom: 8px;
         }
         
+        #highScoreDisplay {
+            color: #ffd700;
+        }
+        
         #instructions {
             position: absolute;
             bottom: 20px;
@@ -48,6 +66,17 @@
             font-size: 14px;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
             pointer-events: none;
+        }
+        
+        #fullscreenIndicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: rgba(255,255,255,0.5);
+            font-size: 12px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            pointer-events: none;
+            transition: opacity 0.3s;
         }
         
         #gameOver {
@@ -74,7 +103,7 @@
         #gameOver p {
             color: #fff;
             font-size: 28px;
-            margin-bottom: 30px;
+            margin-bottom: 15px;
         }
         
         #restartBtn {
@@ -86,11 +115,18 @@
             border: none;
             border-radius: 10px;
             transition: all 0.3s ease;
+            margin-top: 15px;
         }
         
         #restartBtn:hover {
             transform: scale(1.1);
             box-shadow: 0 0 30px rgba(255,0,0,0.6);
+        }
+        
+        .restart-hint {
+            font-size: 16px !important;
+            color: #888 !important;
+            margin-top: 20px !important;
         }
         
         #startScreen {
@@ -148,19 +184,180 @@
             transform: scale(1.1);
             box-shadow: 0 0 30px rgba(0,255,136,0.6);
         }
+        
+        .fullscreen-note {
+            color: #888;
+            font-size: 14px;
+            margin-top: 15px;
+        }
+        
+        /* Pause Menu */
+        #pauseMenu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+            background: rgba(0,0,0,0.9);
+            padding: 50px 80px;
+            border-radius: 20px;
+            border: 3px solid #ffaa00;
+            box-shadow: 0 0 50px rgba(255,170,0,0.5);
+        }
+        
+        #pauseMenu h1 {
+            color: #ffaa00;
+            font-size: 56px;
+            margin-bottom: 30px;
+            text-shadow: 0 0 20px rgba(255,170,0,0.8);
+        }
+        
+        #pauseMenu p {
+            color: #fff;
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+        
+        #resumeBtn {
+            padding: 18px 50px;
+            font-size: 22px;
+            cursor: pointer;
+            background: linear-gradient(145deg, #ffaa00, #cc8800);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+            font-weight: bold;
+        }
+        
+        #resumeBtn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255,170,0,0.6);
+        }
+        
+        .pause-hint {
+            font-size: 16px !important;
+            color: #888 !important;
+            margin-top: 20px !important;
+        }
+        
+        /* New High Score Celebration Screen */
+        #highScoreCelebration {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            display: none;
+            background: rgba(0,0,0,0.9);
+            padding: 50px 80px;
+            border-radius: 20px;
+            border: 3px solid #ffd700;
+            box-shadow: 0 0 60px rgba(255,215,0,0.6);
+            animation: celebrationPulse 0.5s ease-in-out infinite alternate;
+        }
+        
+        @keyframes celebrationPulse {
+            from {
+                box-shadow: 0 0 60px rgba(255,215,0,0.6);
+            }
+            to {
+                box-shadow: 0 0 100px rgba(255,215,0,0.9);
+            }
+        }
+        
+        #highScoreCelebration .trophy {
+            font-size: 120px;
+            animation: trophyBounce 0.6s ease-in-out infinite;
+        }
+        
+        @keyframes trophyBounce {
+            0%, 100% {
+                transform: translateY(0) rotate(-5deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+        }
+        
+        #highScoreCelebration h1 {
+            color: #ffd700;
+            font-size: 48px;
+            margin: 20px 0;
+            text-shadow: 0 0 30px rgba(255,215,0,0.8);
+        }
+        
+        #highScoreCelebration h2 {
+            color: #fff;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        #highScoreCelebration p {
+            color: #ccc;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        #highScoreCelebration .newRecord {
+            color: #ffd700;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        
+        #continueBtn {
+            padding: 18px 50px;
+            font-size: 22px;
+            cursor: pointer;
+            background: linear-gradient(145deg, #ffd700, #ffaa00);
+            color: #000;
+            border: none;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+            margin-top: 25px;
+            font-weight: bold;
+        }
+        
+        #continueBtn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255,215,0,0.8);
+        }
+        
+        /* Confetti animation */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            opacity: 0;
+        }
+        
+        @keyframes confettiFall {
+            0% {
+                transform: translateY(-100px) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body>
     <canvas id="renderCanvas"></canvas>
     
     <div id="ui">
-        <div>🏆 Score: <span id="score">0</span></div>
         <div>📏 Distance: <span id="distance">0</span>m</div>
+        <div id="highScoreDisplay">🏆 Best: <span id="bestDistance">0</span>m</div>
         <div>⚡ Speed: <span id="speed">1.0</span>x</div>
     </div>
     
+    <div id="fullscreenIndicator">Press ESC to pause</div>
+    
     <div id="instructions">
-        ⌨️ <span class="key">A</span> Roll Left | <span class="key">D</span> Roll Right | <span class="key">SPACE</span> Jump | Roll around the tunnel to avoid red cubes!
+        ⌨️ <span class="key">A</span> Roll Left | <span class="key">D</span> Roll Right | <span class="key">SPACE</span> Jump | <span class="key">ESC</span> Pause | Roll around the tunnel to avoid red cubes!
     </div>
     
     <div id="startScreen">
@@ -168,16 +365,35 @@
         <p><span class="key">A</span> Roll LEFT along tunnel surface</p>
         <p><span class="key">D</span> Roll RIGHT along tunnel surface</p>
         <p><span class="key">SPACE</span> Jump off the surface</p>
+        <p><span class="key">ESC</span> Pause the game</p>
         <p>🌀 Roll around the entire tunnel to dodge obstacles!</p>
         <p>💀 Avoid the RED CUBES or you explode!</p>
         <button id="startBtn">START GAME</button>
+        <p class="fullscreen-note">🖥️ Game will enter fullscreen mode<br><span class="key">ESC</span> to pause & exit fullscreen</p>
+    </div>
+    
+    <div id="pauseMenu">
+        <h1>⏸️ PAUSED</h1>
+        <p>Game paused</p>
+        <button id="resumeBtn">▶️ Resume</button>
+        <p class="pause-hint">Press <span class="key">SPACE</span> to resume</p>
+    </div>
+    
+    <div id="highScoreCelebration">
+        <div class="trophy">🏆</div>
+        <h1>NEW RECORD!</h1>
+        <h2>CONGRATULATIONS!</h2>
+        <p class="newRecord">You traveled <span id="celebrationDistance">0</span>m!</p>
+        <p>Previous best: <span id="previousBest">0</span>m</p>
+        <button id="continueBtn">CONTINUE</button>
     </div>
     
     <div id="gameOver">
         <h1>💥 GAME OVER</h1>
-        <p>Final Score: <span id="finalScore">0</span></p>
         <p>Distance: <span id="finalDistance">0</span>m</p>
+        <p style="font-size: 20px; color: #aaa;">Best: <span id="gameOverBest">0</span>m</p>
         <button id="restartBtn">🔄 Play Again</button>
+        <p class="restart-hint">Press <span class="key">SPACE</span> to restart</p>
     </div>
 
     <script>
@@ -254,8 +470,9 @@
         let gameState = {
             isRunning: false,
             isGameOver: false,
-            score: 0,
+            isPaused: false,
             distance: 0,
+            highScore: 0,
             speed: CONFIG.baseSpeed,
             
             // Ball physics
@@ -281,7 +498,10 @@
             smoothedUp: null,
             
             // Store current tunnel direction for particles
-            currentTunnelDir: new BABYLON.Vector3(0, 0, 1)
+            currentTunnelDir: new BABYLON.Vector3(0, 0, 1),
+            
+            // Fullscreen state
+            isFullscreen: false
         };
 
         // Babylon.js objects
@@ -299,15 +519,120 @@
         let coreGlowParticles;
 
         // DOM Elements
-        const scoreElement = document.getElementById('score');
         const distanceElement = document.getElementById('distance');
+        const bestDistanceElement = document.getElementById('bestDistance');
         const speedElement = document.getElementById('speed');
         const gameOverElement = document.getElementById('gameOver');
-        const finalScoreElement = document.getElementById('finalScore');
         const finalDistanceElement = document.getElementById('finalDistance');
+        const gameOverBestElement = document.getElementById('gameOverBest');
         const startScreen = document.getElementById('startScreen');
         const startBtn = document.getElementById('startBtn');
         const restartBtn = document.getElementById('restartBtn');
+        const highScoreCelebration = document.getElementById('highScoreCelebration');
+        const celebrationDistanceElement = document.getElementById('celebrationDistance');
+        const previousBestElement = document.getElementById('previousBest');
+        const continueBtn = document.getElementById('continueBtn');
+        const fullscreenIndicator = document.getElementById('fullscreenIndicator');
+        const pauseMenu = document.getElementById('pauseMenu');
+        const resumeBtn = document.getElementById('resumeBtn');
+
+        // ============================================
+        // FULLSCREEN FUNCTIONS
+        // ============================================
+        
+        function requestFullscreen() {
+            const elem = document.documentElement;
+            
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.webkitRequestFullscreen) { // Safari
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { // IE11
+                elem.msRequestFullscreen();
+            } else if (elem.mozRequestFullScreen) { // Firefox
+                elem.mozRequestFullScreen();
+            }
+        }
+        
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            }
+        }
+        
+        function isInFullscreen() {
+            return !!(document.fullscreenElement || 
+                     document.webkitFullscreenElement || 
+                     document.mozFullScreenElement || 
+                     document.msFullscreenElement);
+        }
+        
+        function handleFullscreenChange() {
+            const wasFullscreen = gameState.isFullscreen;
+            gameState.isFullscreen = isInFullscreen();
+            
+            if (gameState.isFullscreen) {
+                // In fullscreen - hide cursor
+                document.body.classList.add('fullscreen-active');
+                fullscreenIndicator.style.opacity = '1';
+                
+                // Fade out the indicator after 3 seconds
+                setTimeout(() => {
+                    if (gameState.isFullscreen) {
+                        fullscreenIndicator.style.opacity = '0';
+                    }
+                }, 3000);
+            } else {
+                // Exited fullscreen - show cursor
+                document.body.classList.remove('fullscreen-active');
+                fullscreenIndicator.style.opacity = '0';
+                
+                // Pause the game when exiting fullscreen (if game is running and not already paused/game over)
+                if (wasFullscreen && gameState.isRunning && !gameState.isGameOver && !gameState.isPaused) {
+                    pauseGame();
+                }
+            }
+            
+            // Resize the engine to fit new dimensions
+            if (engine) {
+                engine.resize();
+            }
+        }
+
+        // ============================================
+        // PAUSE FUNCTIONS
+        // ============================================
+        
+        function pauseGame() {
+            if (!gameState.isRunning || gameState.isGameOver || gameState.isPaused) return;
+            
+            gameState.isPaused = true;
+            pauseMenu.style.display = 'block';
+            
+            // Stop trail particles when paused
+            stopTrailParticles();
+        }
+        
+        function resumeGame() {
+            if (!gameState.isPaused) return;
+            
+            gameState.isPaused = false;
+            pauseMenu.style.display = 'none';
+            
+            // Restart trail particles
+            startTrailParticles();
+            
+            // Re-enter fullscreen
+            if (!isInFullscreen()) {
+                requestFullscreen();
+            }
+        }
 
         // ============================================
         // INITIALIZATION
@@ -316,6 +641,9 @@
         function init() {
             canvas = document.getElementById('renderCanvas');
             engine = new BABYLON.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
+            
+            // Load high score from localStorage
+            loadHighScore();
             
             createScene();
             
@@ -327,17 +655,40 @@
             canvas.addEventListener('contextmenu', (e) => e.preventDefault());
             startBtn.addEventListener('click', startGame);
             restartBtn.addEventListener('click', restartGame);
+            continueBtn.addEventListener('click', continueToProceed);
+            resumeBtn.addEventListener('click', resumeGame);
+            
+            // Fullscreen change event listeners
+            document.addEventListener('fullscreenchange', handleFullscreenChange);
+            document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+            document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+            document.addEventListener('MSFullscreenChange', handleFullscreenChange);
             
             // Handle window resize
             window.addEventListener('resize', () => engine.resize());
             
+            // Hide fullscreen indicator initially
+            fullscreenIndicator.style.opacity = '0';
+            
             // Main render loop
             engine.runRenderLoop(() => {
-                if (gameState.isRunning && !gameState.isGameOver) {
+                if (gameState.isRunning && !gameState.isGameOver && !gameState.isPaused) {
                     updateGame();
                 }
                 scene.render();
             });
+        }
+        
+        function loadHighScore() {
+            const saved = localStorage.getItem('tunnelRunnerHighScore');
+            if (saved) {
+                gameState.highScore = parseInt(saved, 10);
+                bestDistanceElement.textContent = gameState.highScore;
+            }
+        }
+        
+        function saveHighScore() {
+            localStorage.setItem('tunnelRunnerHighScore', gameState.highScore.toString());
         }
 
         function createScene() {
@@ -351,7 +702,7 @@
             
             // Camera
             camera = new BABYLON.FreeCamera('camera', new BABYLON.Vector3(0, 2, -CONFIG.ballXOffset), scene);
-            camera.fov = 0.7;
+            camera.fov = 0.75;
             
             // Lighting
             const hemisphericLight = new BABYLON.HemisphericLight('hemiLight', new BABYLON.Vector3(0, 1, 0), scene);
@@ -1186,7 +1537,48 @@
         // ============================================
         
         function handleKeyDown(event) {
-            if (gameState.isGameOver) return;
+            // Handle Escape key for pause
+            if (event.code === 'Escape') {
+                event.preventDefault();
+                if (gameState.isRunning && !gameState.isGameOver && !gameState.isPaused) {
+                    // If in fullscreen, browser will exit fullscreen automatically
+                    // and our fullscreenchange handler will pause the game
+                    // If not in fullscreen, manually pause
+                    if (!isInFullscreen()) {
+                        pauseGame();
+                    }
+                    // If in fullscreen, let the browser handle ESC to exit fullscreen
+                    // The fullscreenchange event will then pause the game
+                }
+                return;
+            }
+            
+            // Handle Space key for resume, restart, or continue
+            if (event.code === 'Space') {
+                // If paused, resume the game
+                if (gameState.isPaused) {
+                    resumeGame();
+                    event.preventDefault();
+                    return;
+                }
+                
+                // If on high score celebration screen, continue to game over
+                if (highScoreCelebration.style.display === 'block') {
+                    continueToProceed();
+                    event.preventDefault();
+                    return;
+                }
+                
+                // If game over screen is showing, restart the game
+                if (gameState.isGameOver && gameOverElement.style.display === 'block') {
+                    restartGame();
+                    event.preventDefault();
+                    return;
+                }
+            }
+            
+            // Don't process game input if paused or game over
+            if (gameState.isGameOver || gameState.isPaused) return;
             
             switch(event.code) {
                 case 'KeyA':
@@ -1232,7 +1624,6 @@
             gameState.speed = Math.min(CONFIG.maxSpeed, gameState.speed + CONFIG.speedIncrement * dt);
             
             gameState.distance += gameState.speed * dt;
-            gameState.score = Math.floor(gameState.distance * 10);
             
             const segmentIndex = Math.floor(gameState.distance / CONFIG.tunnelSegmentLength);
             const segmentT = (gameState.distance % CONFIG.tunnelSegmentLength) / CONFIG.tunnelSegmentLength;
@@ -1488,19 +1879,76 @@
             }, 50);
             
             setTimeout(() => {
-                showGameOver();
+                checkAndShowHighScore();
             }, 1500);
         }
 
         function updateUI() {
-            scoreElement.textContent = gameState.score.toLocaleString();
             distanceElement.textContent = Math.floor(gameState.distance);
             speedElement.textContent = gameState.speed.toFixed(2);
+            bestDistanceElement.textContent = gameState.highScore;
+        }
+        
+        function checkAndShowHighScore() {
+            const currentDistance = Math.floor(gameState.distance);
+            
+            if (currentDistance > gameState.highScore) {
+                // New high score!
+                const previousBest = gameState.highScore;
+                gameState.highScore = currentDistance;
+                saveHighScore();
+                
+                // Show celebration screen
+                showHighScoreCelebration(currentDistance, previousBest);
+            } else {
+                // No new high score, show regular game over
+                showGameOver();
+            }
+        }
+        
+        function showHighScoreCelebration(newScore, previousBest) {
+            celebrationDistanceElement.textContent = newScore;
+            previousBestElement.textContent = previousBest;
+            highScoreCelebration.style.display = 'block';
+            
+            // Create confetti effect
+            createConfetti();
+        }
+        
+        function createConfetti() {
+            const colors = ['#ffd700', '#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#ff9ff3'];
+            const celebrationElement = document.getElementById('highScoreCelebration');
+            
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.width = (Math.random() * 10 + 5) + 'px';
+                confetti.style.height = (Math.random() * 10 + 5) + 'px';
+                confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+                confetti.style.animation = `confettiFall ${Math.random() * 2 + 2}s linear forwards`;
+                confetti.style.animationDelay = Math.random() * 1 + 's';
+                celebrationElement.appendChild(confetti);
+                
+                // Remove confetti after animation
+                setTimeout(() => {
+                    if (confetti.parentNode) {
+                        confetti.parentNode.removeChild(confetti);
+                    }
+                }, 4000);
+            }
+        }
+        
+        function continueToProceed() {
+            highScoreCelebration.style.display = 'none';
+            showGameOver();
         }
 
         function showGameOver() {
-            finalScoreElement.textContent = gameState.score.toLocaleString();
             finalDistanceElement.textContent = Math.floor(gameState.distance);
+            gameOverBestElement.textContent = gameState.highScore;
+            bestDistanceElement.textContent = gameState.highScore;
             gameOverElement.style.display = 'block';
         }
 
@@ -1510,12 +1958,22 @@
         
         function startGame() {
             startScreen.style.display = 'none';
+            
+            // Request fullscreen mode
+            requestFullscreen();
+            
             resetGame();
             gameState.isRunning = true;
         }
 
         function restartGame() {
             gameOverElement.style.display = 'none';
+            
+            // Re-enter fullscreen if not already in it
+            if (!isInFullscreen()) {
+                requestFullscreen();
+            }
+            
             resetGame();
             gameState.isRunning = true;
         }
@@ -1526,7 +1984,7 @@
             keys.jump = false;
             
             gameState.isGameOver = false;
-            gameState.score = 0;
+            gameState.isPaused = false;
             gameState.distance = 0;
             gameState.speed = CONFIG.baseSpeed;
             gameState.theta = Math.PI;
