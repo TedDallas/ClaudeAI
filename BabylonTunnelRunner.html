@@ -42,12 +42,14 @@
         #ui {
             position: absolute;
             top: 20px;
-            left: 20px;
+            left: 50%;
+            transform: translateX(-50%);
             color: #fff;
             font-size: 22px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
             user-select: none;
             pointer-events: none;
+            text-align: center;
         }
         
         #ui div {
@@ -326,6 +328,12 @@
             box-shadow: 0 0 30px rgba(255,215,0,0.8);
         }
         
+        .continue-hint {
+            font-size: 16px !important;
+            color: #888 !important;
+            margin-top: 20px !important;
+        }
+        
         /* Confetti animation */
         .confetti {
             position: absolute;
@@ -352,7 +360,6 @@
     <div id="ui">
         <div>📏 Distance: <span id="distance">0</span>m</div>
         <div id="highScoreDisplay">🏆 Best: <span id="bestDistance">0</span>m</div>
-        <div>⚡ Speed: <span id="speed">1.0</span>x</div>
     </div>
     
     <div id="fullscreenIndicator">Press ESC to pause</div>
@@ -387,6 +394,7 @@
         <p class="newRecord">You traveled <span id="celebrationDistance">0</span>m!</p>
         <p>Previous best: <span id="previousBest">0</span>m</p>
         <button id="continueBtn">CONTINUE</button>
+        <p class="continue-hint">Press <span class="key">SPACE</span> to continue</p>
     </div>
     
     <div id="gameOver">
@@ -514,7 +522,7 @@
 
         // Babylon.js objects
         let canvas, engine, scene, camera;
-        let ball, ballMaterial, ballTrail;
+        let ball, ballDecal, ballMaterial, ballTrail;
         let tunnelSegments = [];
         let obstacles = [];
         let explosionParticles;
@@ -529,7 +537,6 @@
         // DOM Elements
         const distanceElement = document.getElementById('distance');
         const bestDistanceElement = document.getElementById('bestDistance');
-        const speedElement = document.getElementById('speed');
         const gameOverElement = document.getElementById('gameOver');
         const finalDistanceElement = document.getElementById('finalDistance');
         const gameOverBestElement = document.getElementById('gameOverBest');
@@ -699,6 +706,12 @@
         function saveHighScore() {
             localStorage.setItem('tunnelRunnerHighScore', gameState.highScore.toString());
         }
+        
+        function resetHighScore() {
+            gameState.highScore = 0;
+            saveHighScore();
+            bestDistanceElement.textContent = '0';
+        }
 
         function createScene() {
             scene = new BABYLON.Scene(engine);
@@ -773,7 +786,7 @@
             ballMaterial.specularPower = 64;
             ball.material = ballMaterial;
             
-            const ballDecal = BABYLON.MeshBuilder.CreateSphere('ballDecal', { diameter: CONFIG.ballRadius * 2.02, segments: 32 }, scene);
+            ballDecal = BABYLON.MeshBuilder.CreateSphere('ballDecal', { diameter: CONFIG.ballRadius * 2.02, segments: 32 }, scene);
             const decalMat = new BABYLON.StandardMaterial('decalMat', scene);
             decalMat.diffuseColor = new BABYLON.Color3(0.05, 0.5, 0.2);
             decalMat.emissiveColor = new BABYLON.Color3(0.02, 0.25, 0.1);
@@ -1547,6 +1560,12 @@
         // ============================================
         
         function handleKeyDown(event) {
+            // Secret key: 0 to reset high score (for testing)
+            if (event.code === 'Digit0' || event.code === 'Numpad0') {
+                resetHighScore();
+                return;
+            }
+            
             // Handle Escape key for pause
             if (event.code === 'Escape') {
                 event.preventDefault();
@@ -1920,7 +1939,11 @@
             // Stop trail particles
             stopTrailParticles();
             
+            // Hide ball and its decal
             ball.visibility = 0;
+            if (ballDecal) {
+                ballDecal.visibility = 0;
+            }
             glowLayer.removeIncludedOnlyMesh(ball);
             
             explosionParticles.emitter = position.clone();
@@ -1952,7 +1975,6 @@
 
         function updateUI() {
             distanceElement.textContent = Math.floor(gameState.distance);
-            speedElement.textContent = gameState.speed.toFixed(2);
             bestDistanceElement.textContent = gameState.highScore;
         }
         
@@ -2096,7 +2118,11 @@
             // Reset and restart trail particles
             startTrailParticles();
             
+            // Show ball and its decal
             ball.visibility = 1;
+            if (ballDecal) {
+                ballDecal.visibility = 1;
+            }
             ball.rotationQuaternion = BABYLON.Quaternion.Identity();
             glowLayer.addIncludedOnlyMesh(ball);
             
