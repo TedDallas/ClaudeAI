@@ -66,6 +66,7 @@
             font-size: 14px;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
             pointer-events: none;
+            transition: opacity 0.5s;
         }
         
         #fullscreenIndicator {
@@ -401,9 +402,12 @@
         // TUNNEL RUNNER - Babylon.js 3D Game
         // ============================================
         
+        // Track if instructions have been shown this session
+        let instructionsShownThisSession = false;
+        
         // Game Configuration
         const CONFIG = {
-            ballRadius: 0.5,
+            ballRadius: 1.0,  // DOUBLED from 0.5
             tunnelRadius: 10,
             tunnelSegmentLength: 40,
             tunnelSegmentsAhead: 12,
@@ -501,7 +505,11 @@
             currentTunnelDir: new BABYLON.Vector3(0, 0, 1),
             
             // Fullscreen state
-            isFullscreen: false
+            isFullscreen: false,
+            
+            // Instructions tracking
+            gameplayTime: 0,
+            instructionsDismissed: false
         };
 
         // Babylon.js objects
@@ -535,6 +543,7 @@
         const fullscreenIndicator = document.getElementById('fullscreenIndicator');
         const pauseMenu = document.getElementById('pauseMenu');
         const resumeBtn = document.getElementById('resumeBtn');
+        const instructionsElement = document.getElementById('instructions');
 
         // ============================================
         // FULLSCREEN FUNCTIONS
@@ -803,8 +812,8 @@
             fireTrailParticles.emitter = ball;
             
             // Emit from behind the ball
-            fireTrailParticles.minEmitBox = new BABYLON.Vector3(-0.15, -0.15, 0.2);
-            fireTrailParticles.maxEmitBox = new BABYLON.Vector3(0.15, 0.15, 0.4);
+            fireTrailParticles.minEmitBox = new BABYLON.Vector3(-0.3, -0.3, 0.4);
+            fireTrailParticles.maxEmitBox = new BABYLON.Vector3(0.3, 0.3, 0.8);
             
             // Green fire colors - bright core to darker edges
             fireTrailParticles.color1 = new BABYLON.Color4(0.6, 1, 0.4, 1);
@@ -812,8 +821,8 @@
             fireTrailParticles.colorDead = new BABYLON.Color4(0, 0.4, 0, 0);
             
             // Size over lifetime - starts small, grows, then shrinks
-            fireTrailParticles.minSize = 0.15;
-            fireTrailParticles.maxSize = 0.5;
+            fireTrailParticles.minSize = 0.3;
+            fireTrailParticles.maxSize = 1.0;
             fireTrailParticles.minScaleX = 0.8;
             fireTrailParticles.maxScaleX = 1.2;
             fireTrailParticles.minScaleY = 1.0;
@@ -865,8 +874,8 @@
             smokeTrailParticles.emitter = ball;
             
             // Larger emit box for smoke spread
-            smokeTrailParticles.minEmitBox = new BABYLON.Vector3(-0.25, -0.25, 0.3);
-            smokeTrailParticles.maxEmitBox = new BABYLON.Vector3(0.25, 0.25, 0.6);
+            smokeTrailParticles.minEmitBox = new BABYLON.Vector3(-0.5, -0.5, 0.6);
+            smokeTrailParticles.maxEmitBox = new BABYLON.Vector3(0.5, 0.5, 1.2);
             
             // Green-tinted smoke colors
             smokeTrailParticles.color1 = new BABYLON.Color4(0.3, 0.6, 0.3, 0.4);
@@ -874,8 +883,8 @@
             smokeTrailParticles.colorDead = new BABYLON.Color4(0.05, 0.15, 0.05, 0);
             
             // Smoke grows as it disperses
-            smokeTrailParticles.minSize = 0.4;
-            smokeTrailParticles.maxSize = 1.2;
+            smokeTrailParticles.minSize = 0.8;
+            smokeTrailParticles.maxSize = 2.4;
             
             // Longer lifetime for smoke
             smokeTrailParticles.minLifeTime = 0.4;
@@ -920,8 +929,8 @@
             sparkTrailParticles.particleTexture = sparkTexture;
             sparkTrailParticles.emitter = ball;
             
-            sparkTrailParticles.minEmitBox = new BABYLON.Vector3(-0.2, -0.2, 0.1);
-            sparkTrailParticles.maxEmitBox = new BABYLON.Vector3(0.2, 0.2, 0.3);
+            sparkTrailParticles.minEmitBox = new BABYLON.Vector3(-0.4, -0.4, 0.2);
+            sparkTrailParticles.maxEmitBox = new BABYLON.Vector3(0.4, 0.4, 0.6);
             
             // Bright green-white sparks
             sparkTrailParticles.color1 = new BABYLON.Color4(0.8, 1, 0.6, 1);
@@ -929,8 +938,8 @@
             sparkTrailParticles.colorDead = new BABYLON.Color4(0, 0.5, 0, 0);
             
             // Small, intense sparks
-            sparkTrailParticles.minSize = 0.05;
-            sparkTrailParticles.maxSize = 0.15;
+            sparkTrailParticles.minSize = 0.1;
+            sparkTrailParticles.maxSize = 0.3;
             
             sparkTrailParticles.minLifeTime = 0.2;
             sparkTrailParticles.maxLifeTime = 0.6;
@@ -970,16 +979,16 @@
             coreGlowParticles.particleTexture = coreTexture;
             coreGlowParticles.emitter = ball;
             
-            coreGlowParticles.minEmitBox = new BABYLON.Vector3(-0.05, -0.05, 0.2);
-            coreGlowParticles.maxEmitBox = new BABYLON.Vector3(0.05, 0.05, 0.25);
+            coreGlowParticles.minEmitBox = new BABYLON.Vector3(-0.1, -0.1, 0.4);
+            coreGlowParticles.maxEmitBox = new BABYLON.Vector3(0.1, 0.1, 0.5);
             
             // Bright white-green core
             coreGlowParticles.color1 = new BABYLON.Color4(0.9, 1, 0.8, 0.9);
             coreGlowParticles.color2 = new BABYLON.Color4(0.7, 1, 0.6, 0.8);
             coreGlowParticles.colorDead = new BABYLON.Color4(0.3, 0.8, 0.3, 0);
             
-            coreGlowParticles.minSize = 0.3;
-            coreGlowParticles.maxSize = 0.6;
+            coreGlowParticles.minSize = 0.6;
+            coreGlowParticles.maxSize = 1.2;
             
             coreGlowParticles.minLifeTime = 0.05;
             coreGlowParticles.maxLifeTime = 0.15;
@@ -1483,7 +1492,8 @@
             const obstacleAngle = Math.random() * Math.PI * 2;
             const obstacleRadius = CONFIG.tunnelRadius - 0.8 - Math.random() * 0.8;
             
-            const cubeSize = 0.8 + Math.random() * 0.6;
+            // DOUBLED cube size: was 0.8 + (0 to 0.6), now 1.6 + (0 to 1.2)
+            const cubeSize = 1.6 + Math.random() * 1.2;
             const cube = BABYLON.MeshBuilder.CreateBox('obstacle_' + segmentIndex + '_' + obstacleIndex, { 
                 size: cubeSize 
             }, scene);
@@ -1621,6 +1631,21 @@
         function updateGame() {
             const dt = Math.min(engine.getDeltaTime() / 1000, 0.05) * 60;
             
+            // Track gameplay time for instructions
+            gameState.gameplayTime += dt / 60; // Convert frames to seconds
+            
+            // Hide instructions after 5 seconds of gameplay
+            if (!gameState.instructionsDismissed && gameState.gameplayTime >= 5) {
+                gameState.instructionsDismissed = true;
+                instructionsShownThisSession = true;
+                if (instructionsElement) {
+                    instructionsElement.style.opacity = '0';
+                    setTimeout(() => {
+                        instructionsElement.style.display = 'none';
+                    }, 500);
+                }
+            }
+            
             gameState.speed = Math.min(CONFIG.maxSpeed, gameState.speed + CONFIG.speedIncrement * dt);
             
             gameState.distance += gameState.speed * dt;
@@ -1709,6 +1734,48 @@
                     .add(right.scale(localX))
                     .add(up.scale(localY))
                     .subtract(tunnelDir.scale(CONFIG.ballXOffset));
+                
+                // IMPROVED COLLISION: Force ball to stay on tunnel surface
+                // Calculate distance from tunnel center
+                const ballToCenter = tunnelCenter.subtract(ballWorldPos.add(tunnelDir.scale(CONFIG.ballXOffset)));
+                const distanceFromCenter = ballToCenter.length();
+                
+                // Minimum allowed distance from center (surface constraint with safety margin)
+                const minDistanceFromCenter = CONFIG.ballRadius + 0.1;
+                const maxDistanceFromCenter = CONFIG.tunnelRadius - CONFIG.ballRadius - 0.05;
+                
+                // If ball is too close to center (penetrating tunnel), push it back
+                if (distanceFromCenter < minDistanceFromCenter) {
+                    const pushDirection = ballToCenter.normalize().scale(-1);
+                    const pushAmount = minDistanceFromCenter - distanceFromCenter;
+                    ballWorldPos.addInPlace(pushDirection.scale(pushAmount));
+                    
+                    // Recalculate radial position based on corrected position
+                    const correctedOffset = ballWorldPos.add(tunnelDir.scale(CONFIG.ballXOffset)).subtract(tunnelCenter);
+                    const correctedLocal = new BABYLON.Vector3(
+                        BABYLON.Vector3.Dot(correctedOffset, right),
+                        BABYLON.Vector3.Dot(correctedOffset, up),
+                        0
+                    );
+                    gameState.radialPosition = correctedLocal.length();
+                    
+                    // Ensure grounded state
+                    if (gameState.radialPosition >= surfaceRadius - 0.2) {
+                        gameState.isGrounded = true;
+                        gameState.radialVelocity = 0;
+                    }
+                }
+                
+                // Also check if too far (shouldn't happen, but safety check)
+                if (distanceFromCenter > maxDistanceFromCenter) {
+                    const pullDirection = ballToCenter.normalize();
+                    const pullAmount = distanceFromCenter - maxDistanceFromCenter;
+                    ballWorldPos.addInPlace(pullDirection.scale(pullAmount));
+                    
+                    gameState.radialPosition = maxDistanceFromCenter;
+                    gameState.isGrounded = true;
+                    gameState.radialVelocity = 0;
+                }
                 
                 ball.position = ballWorldPos;
                 
@@ -1838,7 +1905,7 @@
                 const obsPos = obstacle.position;
                 const distance = BABYLON.Vector3.Distance(ballPos, obsPos);
                 
-                const collisionDist = CONFIG.ballRadius + (obstacle.cubeSize || 0.6) * 0.5;
+                const collisionDist = CONFIG.ballRadius + (obstacle.cubeSize || 1.2) * 0.5;
                 
                 if (distance < collisionDist) {
                     triggerExplosion(ballPos);
@@ -1964,6 +2031,12 @@
             
             resetGame();
             gameState.isRunning = true;
+            
+            // Show instructions only if they haven't been shown this session
+            if (!instructionsShownThisSession && instructionsElement) {
+                instructionsElement.style.display = 'block';
+                instructionsElement.style.opacity = '0.7';
+            }
         }
 
         function restartGame() {
@@ -1976,6 +2049,11 @@
             
             resetGame();
             gameState.isRunning = true;
+            
+            // Don't show instructions on restart if already dismissed this session
+            if (instructionsShownThisSession && instructionsElement) {
+                instructionsElement.style.display = 'none';
+            }
         }
 
         function resetGame() {
@@ -2000,6 +2078,10 @@
             gameState.smoothedCameraPos = null;
             gameState.smoothedCameraTarget = null;
             gameState.smoothedUp = null;
+            
+            // Reset gameplay time and instructions state for new game
+            gameState.gameplayTime = 0;
+            gameState.instructionsDismissed = false;
             
             tunnelSegments.forEach(seg => removeTunnelSegment(seg));
             tunnelSegments = [];
